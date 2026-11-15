@@ -8,7 +8,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test \"scripts/**/*.test.mjs\"",
+    "test": "node --test scripts/anti-slop/lib.test.mjs scripts/anti-slop/cli.test.mjs",
     "gates": "node scripts/anti-slop/check-modularity.mjs --src scripts/anti-slop && node scripts/anti-slop/check-docs.mjs --src scripts/anti-slop && node scripts/anti-slop/check-duplicates.mjs --src scripts",
     "index": "node scripts/anti-slop/generate-component-index.mjs --src scripts"
   }
