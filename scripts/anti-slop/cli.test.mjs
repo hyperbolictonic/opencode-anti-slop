@@ -7,11 +7,13 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { bootstrapGate, globToRegex, matchesAnyGlob, parseFlags, gateArgs } from './cli.mjs';
+import {
+  bootstrapGate, globToRegex, matchesAnyGlob, parseFlags, gateArgs, applyIgnorePaths,
+} from './cli.mjs';
 import {
   compareCounts, compareKindCounts, compareSets, loadBaseline, saveBaseline,
 } from './baseline.mjs';
@@ -106,6 +108,39 @@ test('matchesAnyGlob: empty list never matches', () => {
 
 test('matchesAnyGlob: any of several globs', () => {
   assert.ok(matchesAnyGlob('x/y.ts', ['nothing/**', 'x/**']));
+});
+
+// --- applyIgnorePaths -----------------------------------------------------------
+
+test('applyIgnorePaths: scan-root-relative globs match repo-relative staged files', async () => {
+  // Regression for #18: git-hook staged mode passes repo-relative paths
+  // (src/app/...); a config glob written scan-root-relative (app/...) must
+  // still match, because tree-wide mode matches it that way.
+  const dir = mkdtempSync(path.join(tmpdir(), 'antislop-ignore-'));
+  try {
+    const repo = path.join(dir, 'repo');
+    const nested = path.join(repo, 'src', 'app', '(payload)');
+    mkdirSync(nested, { recursive: true });
+    const full = path.join(nested, 'importMap.js');
+    writeFileSync(full, 'export default 1;');
+    const files = [{ full, rel: 'src/app/payload/importMap.js' }];
+    const kept = applyIgnorePaths(files, ['app/(payload)/**'], { src: path.join(repo, 'src') });
+    assert.equal(kept.length, 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('applyIgnorePaths: repo-relative globs match scan-root-relative rels', () => {
+  // full path under the repo's src/, rel produced by a tree-wide walk
+  const files = [{ full: 'src/collections/Users.ts', rel: 'collections/Users.ts' }];
+  const kept = applyIgnorePaths(files, ['src/collections/**'], { src: 'src' });
+  assert.equal(kept.length, 0);
+});
+
+test('applyIgnorePaths: no globs keeps everything silently', () => {
+  const files = [{ full: 'a.ts', rel: 'a.ts' }];
+  assert.equal(applyIgnorePaths(files, []).length, 1);
 });
 
 // --- baseline ratchet ------------------------------------------------------------

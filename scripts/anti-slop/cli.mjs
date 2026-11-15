@@ -136,20 +136,25 @@ export function gateArgs({ argv, usage, spec, defaults, allowPositionals = false
 
 /**
  * Filter resolved files by a docs/duplicates-style ignore-path config:
- * globs are matched against paths relative to the scan root AND the repo
- * root, so both conventions work. Returns the kept files and prints an
- * exclusion notice when any glob is configured and something matched.
+ * globs are matched against THREE path candidates so every mode and both
+ * glob conventions work — the provided rel, repo-relative, and (when `src`
+ * is given) scan-root-relative. Tree-wide walks produce scan-root-relative
+ * rels; git-hook staged mode produces repo-relative ones; configs may use
+ * either convention. Returns the kept files and prints an exclusion notice
+ * when any glob is configured and something matched.
  */
 export function applyIgnorePaths(files, globs, { label = 'ignorePaths', src } = {}) {
   if (!Array.isArray(globs) || globs.length === 0) return files;
+  const srcDir = src ? path.resolve(src) : null;
   const kept = files.filter((f) => {
     const repoRel = path.relative(process.cwd(), f.full).split(path.sep).join('/');
-    return !matchesAnyGlob(f.rel, globs) && !matchesAnyGlob(repoRel, globs);
+    const scanRel = srcDir ? path.relative(srcDir, f.full).split(path.sep).join('/') : null;
+    const candidates = scanRel ? [f.rel, repoRel, scanRel] : [f.rel, repoRel];
+    return !candidates.some((p) => matchesAnyGlob(p, globs));
   });
   const excluded = files.length - kept.length;
   if (excluded > 0) {
-    const scope = src ? `relative to '${src}/' or the repo root` : 'relative to the scan root or the repo root';
-    console.log(`Ignoring ${excluded} file(s) matching ${label} (${globs.join(', ')}; ${scope}).`);
+    console.log(`Ignoring ${excluded} file(s) matching ${label} (${globs.join(', ')}).`);
   }
   return kept;
 }
