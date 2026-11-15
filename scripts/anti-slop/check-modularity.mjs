@@ -23,12 +23,18 @@
 
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
 import path from 'node:path';
-import { walk, stripNoise, lineOf, SOURCE_EXT, IGNORE_FILE } from './lib.mjs';
+import { walk, stripNoise, lineOf, SOURCE_EXT, IGNORE_FILE, loadConfig } from './lib.mjs';
+
+// Defaults < anti-slop.config.json < CLI flags.
+const cfgMod = ((loadConfig().modularity) ?? {});
 
 function parseArgs(argv) {
   const a = {
-    src: 'src', maxFileLines: 300, maxFunctionLines: 80,
-    maxClassMethods: 10, reportOnly: false, paths: [],
+    src: cfgMod.src ?? 'src',
+    maxFileLines: cfgMod.maxFileLines ?? 300,
+    maxFunctionLines: cfgMod.maxFunctionLines ?? 80,
+    maxClassMethods: cfgMod.maxClassMethods ?? 10,
+    reportOnly: false, paths: [],
   };
   for (let i = 2; i < argv.length; i++) {
     const s = argv[i];
@@ -39,6 +45,7 @@ function parseArgs(argv) {
     else if (s === '--report-only') a.reportOnly = true;
     else if (s === '-h' || s === '--help') {
       console.log('Usage: node check-modularity.mjs [paths...] [--src src] [--max-file-lines 300] [--max-function-lines 80] [--max-class-methods 10] [--report-only]');
+      console.log('Config: anti-slop.config.json "modularity" section (src, maxFileLines, maxFunctionLines, maxClassMethods).');
       process.exit(0);
     } else a.paths.push(s);
   }

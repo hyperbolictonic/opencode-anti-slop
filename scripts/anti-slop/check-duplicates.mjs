@@ -22,11 +22,18 @@
 
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import { walk, stripNoise, tokenize, lineOf } from './lib.mjs';
+import { walk, stripNoise, tokenize, lineOf, loadConfig, matchesAnyGlob } from './lib.mjs';
 
 // --- args -------------------------------------------------------------------
+// Defaults < anti-slop.config.json < CLI flags.
+const cfgDups = (loadConfig().duplicates ?? {});
+
 function parseArgs(argv) {
-  const a = { src: 'src', minTokens: 50, threshold: 3 };
+  const a = {
+    src: cfgDups.src ?? 'src',
+    minTokens: cfgDups.minTokens ?? 50,
+    threshold: cfgDups.threshold ?? 3,
+  };
   for (let i = 2; i < argv.length; i++) {
     const s = argv[i];
     if (s === '--src') a.src = argv[++i];
@@ -34,6 +41,7 @@ function parseArgs(argv) {
     else if (s === '--threshold') a.threshold = Number(argv[++i]);
     else if (s === '-h' || s === '--help') {
       console.log('Usage: node check-duplicates.mjs [--src src] [--min-tokens 50] [--threshold 3]');
+      console.log('Config: anti-slop.config.json "duplicates" section (src, minTokens, threshold, ignore globs).');
       process.exit(0);
     } else {
       console.error(`Unknown argument: ${s}`);
@@ -48,6 +56,7 @@ function parseArgs(argv) {
 }
 
 const args = parseArgs(process.argv);
+const IGNORE_GLOBS = Array.isArray(cfgDups.ignore) ? cfgDups.ignore : [];
 const SRC_DIR = path.resolve(args.src);
 
 if (!existsSync(SRC_DIR)) {
@@ -56,7 +65,12 @@ if (!existsSync(SRC_DIR)) {
 }
 
 // --- detect -------------------------------------------------------------------
-const files = walk(SRC_DIR, SRC_DIR);
+const allFiles = walk(SRC_DIR, SRC_DIR);
+const files = allFiles.filter((f) => !matchesAnyGlob(f.rel, IGNORE_GLOBS));
+const excludedCount = allFiles.length - files.length;
+if (IGNORE_GLOBS.length > 0) {
+  console.log(`Ignoring paths relative to '${args.src}/': ${IGNORE_GLOBS.join(', ')} (${excludedCount} file(s) excluded).`);
+}
 const K = args.minTokens;
 
 // Map: window key -> [{ file, idx }]

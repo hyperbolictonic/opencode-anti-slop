@@ -45,6 +45,26 @@ In order:
   directory. Only promote to shared directories (`components/`, `hooks/`, `lib/`)
   when a second feature needs it — and then delete the local copy.
 
+## 2b. What NOT to extract — framework scaffolding is not duplication
+
+- **Declarative config is shape, not logic.** Repetition a framework *makes you
+  write* — collection/field definitions, route tables, schema registrations,
+  DI container setup — cannot "drift" the way two copies of logic can. The
+  Rule of Two does not apply to it, and the clone gate excludes such files
+  (list them under `ignore` in `anti-slop.config.json`). Do not wrap framework
+  scaffolding in your own abstraction layers just because it repeats.
+- **Framework primitives beat hand-rolled ones.** Before building any
+  abstraction, check whether the framework already provides the primitive:
+  auth/session handling, field-level access, validation, caching, file
+  handling, background jobs. Reimplementing what the platform gives you
+  creates a second source of truth — that is worse than repetition.
+- **The dividing line is drift.** Extract a repeated block only when its copies
+  could *behave differently* — a rule enforced in two places, an algorithm
+  fixed in two spots. Shape that stays identical by nature of being
+  declarative needs no extraction. If a declarative block embeds a real rule
+  (e.g. who may read a record), extract that *rule* into one place and have
+  every block reference it — the config stays, the behavior is single-source.
+
 ## 3. Backend / Node rules
 
 - **Wrap external services behind adapters.** Direct SDK calls, `fetch` to third

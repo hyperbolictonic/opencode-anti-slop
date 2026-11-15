@@ -105,9 +105,52 @@ Rules of thumb baked into the skills:
   handlers, data via the project's fetching library.
 - **No threshold weakening** — fix the duplication/monolith, don't tune the check.
 
+## Tuning per repo: `anti-slop.config.json`
+
+Each gate reads `anti-slop.config.json` from the repo root (defaults shown):
+
+```json
+{
+  "duplicates": {
+    "src": "src",
+    "minTokens": 50,
+    "threshold": 3,
+    "ignore": ["src/collections/**"]
+  },
+  "modularity": {
+    "src": "src",
+    "maxFileLines": 300,
+    "maxFunctionLines": 80,
+    "maxClassMethods": 10
+  }
+}
+```
+
+- `ignore` (duplicates only): globs relative to `src` for **framework-idiomatic
+  declarative files** — collection/field configs, schema registrations. Their
+  repetition is shape a framework requires, not logic that can drift; excluding
+  them keeps the gate focused on logic clones. Exclusions are printed on every
+  run, so nothing is silently ignored.
+- CLI flags override the config; the config overrides defaults. Hooks call the
+  scripts bare, so the config governs them automatically.
+
+## What counts as duplication — and what doesn't
+
+- **Counts:** logic whose copies can drift — repeated guards, repeated
+  fetch/map flows, hand-rolled helpers for what a library or the framework
+  already provides.
+- **Doesn't count:** declarative scaffolding a framework requires you to write.
+  The dividing line is *drift*: extract a repeated block only when its copies
+  could behave differently. If a declarative block embeds a real rule (e.g.
+  who may read a record), extract that rule to one place and reference it —
+  the config stays, the behavior is single-source.
+- **Prefer the framework's own primitives** (auth, field-level access,
+  validation, versions) over hand-rolled equivalents — a second source of
+  truth is worse than repetition.
+
 ## Reusable vs. project-specific
 
 The skills are project-agnostic: they direct the agent to discover each repo's
 own structure (`package.json`, source tree, `docs/COMPONENT_INDEX.md`) at
-runtime. Tuning per project happens in the target repo's own `AGENTS.md` and
-the generated inventory — not by editing these skills.
+runtime. Tuning per project happens in the target repo's `anti-slop.config.json`
+and its own `AGENTS.md` — not by editing these skills.

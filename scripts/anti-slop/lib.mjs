@@ -6,7 +6,7 @@
  * free of any script-specific behavior (no args parsing, no I/O decisions).
  */
 
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 
 export const EXCLUDE_DIRS = new Set([
@@ -106,4 +106,58 @@ export function lineOf(stripped, idx) {
     if (stripped[i] === '\n') line++;
   }
   return line;
+}
+
+// --- per-repo config ----------------------------------------------------------
+/**
+ * Reads `anti-slop.config.json` from process.cwd() (repo root), returning the
+ * parsed object or {} when absent/invalid (with a warning on invalid).
+ * Scripts merge: defaults < config file < CLI flags.
+ *
+ * Shape:
+ * {
+ *   "duplicates": { "src": "src", "minTokens": 50, "threshold": 3,
+ *                   "ignore": ["src/collections/**"] },
+ *   "modularity": { "src": "src", "maxFileLines": 300, "maxFunctionLines": 80,
+ *                   "maxClassMethods": 10 }
+ * }
+ *
+ * `ignore` (duplicates only) excludes framework-idiomatic declarative files
+ * (collection configs, generated tables) whose repetition is shape, not logic.
+ */
+export function loadConfig() {
+  const file = path.join(process.cwd(), 'anti-slop.config.json');
+  if (!existsSync(file)) return {};
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch (err) {
+    console.error(`[warn] Could not parse anti-slop.config.json (${err.message}); using defaults.`);
+    return {};
+  }
+}
+
+/** Convert a glob (`**`, `*`, `?`) into a RegExp tested against '/'-separated rel paths. */
+export function globToRegex(glob) {
+  let pattern = '';
+  for (let i = 0; i < glob.length; i++) {
+    const c = glob[i];
+    if (c === '*') {
+      if (glob[i + 1] === '*') {
+        pattern += '[\\s\\S]*';
+        i++;
+      } else {
+        pattern += '[^/]*';
+      }
+    } else if (c === '?') {
+      pattern += '[^/]';
+    } else {
+      pattern += c.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+    }
+  }
+  return new RegExp(`^${pattern}$`);
+}
+
+/** True when relPath matches any ignore glob. */
+export function matchesAnyGlob(relPath, globs) {
+  return globs.length > 0 && globs.some((g) => globToRegex(g).test(relPath));
 }

@@ -49,6 +49,15 @@ it is not itself an app. See `README.md` for the full picture and install flow.
 - JSDoc: the index generator reads the `/** ... */` block immediately above an
   export for the "When to use" column; undocumented exports are counted and
   reported.
+- Gates read per-repo tuning from `anti-slop.config.json` at the repo root
+  (duplicates: src/minTokens/threshold/ignore globs; modularity: budgets).
+  Ignore globs match paths relative to the scan root (`collections/**`, not
+  `src/collections/**`) and are always printed in gate output. CLI flags
+  override the config; hooks call scripts bare, so the config governs them.
+- `reuse-before-create` carries the drift principle: declarative framework
+  scaffolding (Payload field configs, route tables) is shape, not duplication;
+  framework primitives beat hand-rolled abstractions; extract only what can
+  drift.
 - Git hooks run under Git-for-Windows sh: ERE patterns need a single backslash
   (`'\.ts$'`) — a double backslash silently matches nothing and empty-matches
   make the pre-commit gate exit 0 with no output. Always smoke-test a new hook
