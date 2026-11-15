@@ -23,6 +23,7 @@ import {
   mkdirSync,
 } from 'node:fs';
 import path from 'node:path';
+import { walk } from './lib.mjs';
 
 // --- args -------------------------------------------------------------------
 function parseArgs(argv) {
@@ -51,28 +52,6 @@ const OUT_FILE = path.resolve(args.root, args.out);
 if (!existsSync(SRC_DIR)) {
   console.error(`Source directory not found: ${SRC_DIR}`);
   process.exit(1);
-}
-
-// --- scan config ------------------------------------------------------------
-const EXCLUDE_DIRS = new Set([
-  'node_modules', 'dist', 'build', 'out', '.next', '.turbo',
-  'coverage', 'storybook-static', '__tests__', '__mocks__',
-]);
-const IGNORE_FILE = /(\.test|\.spec|\.stories|\.d)\.[tj]sx?$/;
-const SOURCE_EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.mts']);
-
-function walk(dir, base) {
-  const files = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.') || EXCLUDE_DIRS.has(entry.name)) continue;
-    const full = path.join(dir, entry.name);
-    const rel = path.relative(base, full).split(path.sep).join('/');
-    if (entry.isDirectory()) files.push(...walk(full, base));
-    else if (SOURCE_EXT.has(path.extname(entry.name)) && !IGNORE_FILE.test(entry.name)) {
-      files.push({ full, rel });
-    }
-  }
-  return files;
 }
 
 // --- export extraction ------------------------------------------------------

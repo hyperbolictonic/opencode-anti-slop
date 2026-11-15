@@ -35,6 +35,8 @@ drift and scripts do not.
                                 layout reuse, missing docs).
 
 scripts/anti-slop/
+  lib.mjs                       Shared scanning helpers (walk, stripNoise,
+                                tokenize, lineOf) used by all gate scripts.
   generate-component-index.mjs  Scans src/ and (re)generates docs/COMPONENT_INDEX.md
                                 (the inventory reuse checks are grounded in).
                                 Pulls each export's "When to use" from its JSDoc.

@@ -22,6 +22,7 @@
 
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
+import { walk, stripNoise, tokenize, lineOf } from './lib.mjs';
 
 // --- args -------------------------------------------------------------------
 function parseArgs(argv) {
@@ -54,75 +55,6 @@ if (!existsSync(SRC_DIR)) {
   process.exit(1);
 }
 
-// --- walk -------------------------------------------------------------------
-const EXCLUDE_DIRS = new Set([
-  'node_modules', 'dist', 'build', 'out', '.next', '.turbo',
-  'coverage', 'storybook-static', '__tests__', '__mocks__',
-]);
-const IGNORE_FILE = /(\.test|\.spec|\.stories|\.d)\.[tj]sx?$/;
-const SOURCE_EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.mts']);
-
-function walk(dir, base) {
-  const files = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.') || EXCLUDE_DIRS.has(entry.name)) continue;
-    const full = path.join(dir, entry.name);
-    const rel = path.relative(base, full).split(path.sep).join('/');
-    if (entry.isDirectory()) files.push(...walk(full, base));
-    else if (SOURCE_EXT.has(path.extname(entry.name)) && !IGNORE_FILE.test(entry.name)) {
-      files.push({ full, rel });
-    }
-  }
-  return files;
-}
-
-// --- strip comments ----------------------------------------------------------
-function stripComments(src) {
-  let out = '';
-  let i = 0;
-  const n = src.length;
-  while (i < n) {
-    const c = src[i];
-    const next = src[i + 1];
-    if (c === '/' && next === '/') {
-      while (i < n && src[i] !== '\n') i++;
-    } else if (c === '/' && next === '*') {
-      i += 2;
-      while (i < n && !(src[i] === '*' && src[i + 1] === '/')) {
-        if (src[i] === '\n') out += '\n'; // preserve line numbers
-        i++;
-      }
-      i += 2;
-    } else {
-      out += c;
-      i++;
-    }
-  }
-  return out;
-}
-
-// --- tokenize ----------------------------------------------------------------
-// Strings/numbers become placeholders; identifiers and symbols stay literal.
-const TOKEN_RE =
-  /"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`|[A-Za-z_$][\w$]*|\d+(?:\.\d+)?|\S/g;
-
-function tokenize(stripped) {
-  const tokens = []; // { t: normalized text, line }
-  for (const m of stripped.matchAll(TOKEN_RE)) {
-    const raw = m[0];
-    // line = 1 + newlines before the match start
-    let nl = 0;
-    for (let k = 0; k < m.index; k++) if (m.input[k] === '\n') nl++;
-    const line = 1 + nl;
-    let t;
-    if (raw[0] === '"' || raw[0] === "'" || raw[0] === '`') t = '<str>';
-    else if (/^\d/.test(raw)) t = '<num>';
-    else t = raw;
-    tokens.push({ t, line });
-  }
-  return tokens;
-}
-
 // --- detect -------------------------------------------------------------------
 const files = walk(SRC_DIR, SRC_DIR);
 const K = args.minTokens;
@@ -131,7 +63,7 @@ const K = args.minTokens;
 const windows = new Map();
 
 for (const file of files) {
-  const stripped = stripComments(readFileSync(file.full, 'utf8'));
+  const stripped = stripNoise(readFileSync(file.full, 'utf8'));
   file.tokens = tokenize(stripped);
   file.totalLines = stripped.split('\n').length;
   if (file.tokens.length < K) continue;

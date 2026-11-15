@@ -23,6 +23,7 @@
 
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { walk, stripNoise, lineOf } from './lib.mjs';
 
 function parseArgs(argv) {
   const a = {
@@ -52,27 +53,6 @@ function parseArgs(argv) {
 
 const args = parseArgs(process.argv);
 
-const EXCLUDE_DIRS = new Set([
-  'node_modules', 'dist', 'build', 'out', '.next', '.turbo',
-  'coverage', 'storybook-static', '__tests__', '__mocks__',
-]);
-const IGNORE_FILE = /(\.test|\.spec|\.stories|\.d)\.[tj]sx?$/;
-const SOURCE_EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.mts']);
-
-function walk(dir, base) {
-  const files = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.') || EXCLUDE_DIRS.has(entry.name)) continue;
-    const full = path.join(dir, entry.name);
-    const rel = path.relative(base, full).split(path.sep).join('/');
-    if (entry.isDirectory()) files.push(...walk(full, base));
-    else if (SOURCE_EXT.has(path.extname(entry.name)) && !IGNORE_FILE.test(entry.name)) {
-      files.push({ full, rel });
-    }
-  }
-  return files;
-}
-
 function collectFiles(paths) {
   const files = [];
   for (const p of paths) {
@@ -87,50 +67,6 @@ function collectFiles(paths) {
     }
   }
   return files;
-}
-
-// Remove comments and string contents so brace matching is reliable.
-// Line count and line numbers are preserved via \n placeholders.
-function stripNoise(src) {
-  let out = '';
-  let i = 0;
-  const n = src.length;
-  while (i < n) {
-    const c = src[i];
-    const next = src[i + 1];
-    if (c === '/' && next === '/') {
-      while (i < n && src[i] !== '\n') i++;
-    } else if (c === '/' && next === '*') {
-      i += 2;
-      while (i < n && !(src[i] === '*' && src[i + 1] === '/')) {
-        if (src[i] === '\n') out += '\n';
-        i++;
-      }
-      i += 2;
-    } else if (c === '"' || c === "'" || c === '`') {
-      const quote = c;
-      i++;
-      while (i < n && src[i] !== quote) {
-        if (src[i] === '\\') i++;
-        if (src[i] === '\n') out += '\n';
-        i++;
-      }
-      i++; // closing quote
-      out += '""';
-    } else {
-      out += c;
-      i++;
-    }
-  }
-  return out;
-}
-
-function lineOf(stripped, charIndex) {
-  let line = 1;
-  for (let i = 0; i < charIndex && i < stripped.length; i++) {
-    if (stripped[i] === '\n') line++;
-  }
-  return line;
 }
 
 function analyze(source, limits) {
