@@ -112,11 +112,32 @@ export function lineOf(stripped, idx) {
 /**
  * Returns the first line of the JSDoc/TSDoc block immediately preceding
  * source index `idx`, or null if there is none.
+ *
+ * Why this is not a one-line regex: the previous implementation scanned with
+ * `/\/\*\*([\s\S]*?)\*\/\s*$/`. The `$` anchor plus a lazy capture makes that
+ * match start at the FIRST docblock in the file and end at the LAST closing
+ * terminator before the declaration, so every export reported the module
+ * header — in a real repo, four server actions all described as "Carer-facing
+ * mutations." and a type's doc attached to the function above it. A one-line
+ * block also leaked its closing terminator into docs/COMPONENT_INDEX.md.
+ * check-docs only requires a non-null first line, so the gate passed while the
+ * inventory that `reuse-before-create` is grounded in was wrong.
+ *
+ * Keep both properties: the NEAREST block, and only when nothing but whitespace
+ * sits between its close and the declaration. Anything else must return null —
+ * that is the "undocumented" verdict the gate exists to report, and it is safer
+ * than borrowing a neighbouring comment.
  */
 export function jsdocBefore(source, idx) {
-  const m = /\/\*\*([\s\S]*?)\*\/\s*$/.exec(source.slice(0, idx));
-  if (!m) return null;
-  const lines = m[1]
+  const slice = source.slice(0, idx);
+  const start = slice.lastIndexOf('/**');
+  if (start === -1) return null;
+  const end = slice.indexOf('*/', start);
+  if (end === -1) return null;
+  if (slice.slice(end + 2).trim() !== '') return null;
+
+  const lines = slice
+    .slice(start + 3, end)
     .split('\n')
     .map((l) => l.replace(/^\s*\*+\s?/, '').trim())
     .filter(Boolean);

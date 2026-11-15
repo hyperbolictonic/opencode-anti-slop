@@ -64,7 +64,7 @@ task extracted components, merged duplicated flows, or moved rules between
 files, run the `abstraction-review` skill before reporting, and include its
 "Second-order opportunities" list in the report.
 
-## 5. Report
+## 6. Report
 
 End the task with a short summary: checks run, results, files touched, and any
 pre-existing issues you noticed but did not fix (report, don't drive-by-fix).
