@@ -2,34 +2,57 @@
 /**
  * install.mjs — install the anti-slop kit into a target repository.
  *
+ * Also the npx entrypoint (`bin` in package.json):
+ *   npx github:hyperbolictonic/opencode-anti-slop          # install into cwd
+ *   npx github:hyperbolictonic/opencode-anti-slop ./app    # explicit target
+ *   npx github:hyperbolictonic/opencode-anti-slop --hooks  # + git hooks
+ *
  * Copies:
- *   .opencode/skills/<4 skills>          -> <target>/.opencode/skills/
+ *   .opencode/skills/<skills>            -> <target>/.opencode/skills/
+ *   .opencode/commands/audit-ui.md       -> <target>/.opencode/commands/
  *   scripts/anti-slop/*.mjs              -> <target>/scripts/anti-slop/
+ *   templates/anti-slop-ci.yml           -> <target>/.github/workflows/
  *
  * Then prints the manual setup steps that cannot be safely automated
  * (AGENTS.md snippet, opencode.json instructions, package.json scripts,
- * ESLint setup).
+ * ESLint setup). --hooks also installs the git pre-commit gate when the
+ * target is a git repo.
  *
  * Usage:
- *   node install.mjs <target-repo-dir> [--force]
+ *   npx opencode-anti-slop [target-dir] [--force] [--hooks]
+ *   node install.mjs [target-repo-dir] [--force] [--hooks]
  */
 
-import { cpSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const kitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
-const force = process.argv.includes('--force');
-const targetArg = process.argv.find((a, i) => i >= 2 && a !== '--force');
+const argv = process.argv.slice(2);
+const flags = new Set(argv.filter((a) => a.startsWith('--')));
+const force = flags.has('--force');
+const wantHooks = flags.has('--hooks');
+const targetArg = argv.find((a) => !a.startsWith('--'));
 
-if (process.argv.includes('-h') || process.argv.includes('--help') || !targetArg) {
-  console.log('Usage: node install.mjs <target-repo-dir> [--force]');
-  process.exit(process.argv.includes('-h') || process.argv.includes('--help') ? 0 : 1);
+if (flags.has('-h') || flags.has('--help') || !targetArg) {
+  const help = [
+    'Usage: npx github:hyperbolictonic/opencode-anti-slop [target-dir] [--force] [--hooks]',
+    '',
+    '  target-dir  defaults to the current directory',
+    '  --force     overwrite kit files that already exist in the target',
+    '  --hooks     also install the git pre-commit gate (requires .git)',
+  ].join('\n');
+  console.log(help);
+  process.exit(flags.has('-h') || flags.has('--help') ? 0 : 1);
 }
 
 const target = path.resolve(targetArg);
-if (!existsSync(target)) {
+if (!existsSync(target) || !statSync(target).isDirectory()) {
   console.error(`Target directory not found: ${target}`);
+  process.exit(1);
+}
+if (path.resolve(kitRoot) === target) {
+  console.error('Refusing to install the kit into itself.');
   process.exit(1);
 }
 
@@ -113,7 +136,21 @@ Manual setup in ${target} (one-time):
 5. Generate the first inventory:  node scripts/anti-slop/generate-component-index.mjs
 
 6. Git gates (recommended):  git init && node scripts/anti-slop/install-hooks.mjs
-   - pre-commit: modularity check on staged files (blocking) + duplicate report
-   - pre-push: full duplicate gate + lint/typecheck/test via --if-present
+   - pre-commit: modularity + docs on staged files (blocking), duplicate/import reports
+   - pre-push: full duplicate + import gates + lint/typecheck/test via --if-present
    - /audit-ui in OpenCode produces a prioritized refactor plan from the same checks
 `);
+
+// --- optional hooks ------------------------------------------------------------
+if (wantHooks) {
+  if (!existsSync(path.join(target, '.git'))) {
+    console.error('[skip] --hooks requested but no .git directory in target; run git init first.');
+  } else {
+    const { spawnSync } = await import('node:child_process');
+    const hookScript = path.join(scriptsDest, 'install-hooks.mjs');
+    if (existsSync(hookScript)) {
+      const res = spawnSync(process.execPath, [hookScript], { stdio: 'inherit', cwd: target });
+      if (res.error) console.error(`[warn] hook installer failed: ${res.error.message}`);
+    }
+  }
+}
