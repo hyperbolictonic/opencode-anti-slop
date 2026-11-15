@@ -20,11 +20,8 @@
  *   threshold = max allowed duplicated-lines percent; 0 disables failing.
  */
 
-import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
-import path from 'node:path';
-import {
-  walk, stripNoise, tokenize, lineOf,
-} from './lib.mjs';
+import { readFileSync } from 'node:fs';
+import { stripNoise, tokenize } from './lib.mjs';
 import { loadConfig, matchesAnyGlob, bootstrapGate, resolveScanTarget } from './cli.mjs';
 
 // --- args -------------------------------------------------------------------
@@ -132,7 +129,16 @@ for (const c of clones) {
   });
 }
 
-for (const r of cloneRegions) {
+// Same-file pairs whose line ranges overlap are the sliding window matching
+// itself shifted within one line — not clones, and they inflate both the
+// region list and the per-file ranking. Keep disjoint same-file pairs and all
+// cross-file pairs.
+const regions = cloneRegions.filter((r) => {
+  if (r.aFile !== r.bFile) return true;
+  return r.aLine > r.bEndLine || r.bLine > r.aEndLine;
+});
+
+for (const r of regions) {
   for (const [rel, s, e] of [[r.aFile, r.aLine, r.aEndLine], [r.bFile, r.bLine, r.bEndLine]]) {
     let set = dupLines.get(rel);
     if (!set) { set = new Set(); dupLines.set(rel, set); }
@@ -151,14 +157,14 @@ const pct = totalAll > 0 ? (totalDup / totalAll) * 100 : 0;
 // --- report -------------------------------------------------------------------
 console.log(`Checked ${files.length} files (${totalAll} lines), min-tokens=${K}, threshold=${args.threshold}%`);
 
-if (cloneRegions.length === 0) {
+if (regions.length === 0) {
   console.log('[ok] No duplicates found.');
   process.exit(0);
 }
 
 const MAX_REPORT = 40;
-console.log(`Found ${cloneRegions.length} clone region(s). Showing up to ${MAX_REPORT}:\n`);
-for (const r of cloneRegions.slice(0, MAX_REPORT)) {
+console.log(`Found ${regions.length} clone region(s). Showing up to ${MAX_REPORT}:\n`);
+for (const r of regions.slice(0, MAX_REPORT)) {
   console.log(`  ${r.aFile}:${r.aLine}-${r.aEndLine}  <->  ${r.bFile}:${r.bLine}-${r.bEndLine}  (~${r.tokens} tokens)`);
 }
 
