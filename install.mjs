@@ -33,8 +33,9 @@ const flags = new Set(argv.filter((a) => a.startsWith('--')));
 const force = flags.has('--force');
 const wantHooks = flags.has('--hooks');
 const targetArg = argv.find((a) => !a.startsWith('--'));
+const helpRequested = flags.has('-h') || flags.has('--help');
 
-if (flags.has('-h') || flags.has('--help') || !targetArg) {
+if (helpRequested) {
   const help = [
     'Usage: npx github:hyperbolictonic/opencode-anti-slop [target-dir] [--force] [--hooks]',
     '',
@@ -43,10 +44,10 @@ if (flags.has('-h') || flags.has('--help') || !targetArg) {
     '  --hooks     also install the git pre-commit gate (requires .git)',
   ].join('\n');
   console.log(help);
-  process.exit(flags.has('-h') || flags.has('--help') ? 0 : 1);
+  process.exit(0);
 }
 
-const target = path.resolve(targetArg);
+const target = path.resolve(targetArg ?? process.cwd());
 if (!existsSync(target) || !statSync(target).isDirectory()) {
   console.error(`Target directory not found: ${target}`);
   process.exit(1);
