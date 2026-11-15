@@ -14,6 +14,13 @@ export const EXCLUDE_DIRS = new Set([
   'coverage', 'storybook-static', '__tests__', '__mocks__',
 ]);
 export const IGNORE_FILE = /(\.test|\.spec|\.stories|\.d)\.[tj]sx?$/;
+
+/** Generated files that must never be gated (sizes/counts are machine-owned). */
+export const GENERATED_FILE = /(^|\/)(payload-types|next-env)\.d?ts$/;
+
+export function isGenerated(relPath) {
+  return GENERATED_FILE.test(relPath);
+}
 export const SOURCE_EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.mts']);
 
 /** Recursively list source files under `dir`, as { full, rel } with '/'-separated rel paths. */
@@ -24,7 +31,7 @@ export function walk(dir, base) {
     const full = path.join(dir, entry.name);
     const rel = path.relative(base, full).split(path.sep).join('/');
     if (entry.isDirectory()) files.push(...walk(full, base));
-    else if (SOURCE_EXT.has(path.extname(entry.name)) && !IGNORE_FILE.test(entry.name)) {
+    else if (SOURCE_EXT.has(path.extname(entry.name)) && !IGNORE_FILE.test(entry.name) && !isGenerated(rel)) {
       files.push({ full, rel });
     }
   }

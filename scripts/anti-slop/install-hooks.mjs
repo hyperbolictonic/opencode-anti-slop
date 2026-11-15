@@ -16,8 +16,12 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 
 const force = process.argv.includes('--force');
+const preCommitOnly = process.argv.includes('--pre-commit-only');
 if (process.argv.includes('-h') || process.argv.includes('--help')) {
-  console.log('Usage: node scripts/anti-slop/install-hooks.mjs [--force]  (run from the target repo root)');
+  console.log('Usage: node scripts/anti-slop/install-hooks.mjs [--force] [--pre-commit-only]');
+  console.log('  --pre-commit-only: skip the pre-push gate. Use when legacy duplication or');
+  console.log('  size violations exist repo-wide — pre-push would block every push until');
+  console.log('  the cleanup lands. Install the full pair once the gates pass.');
   process.exit(0);
 }
 
@@ -71,7 +75,11 @@ const writeHook = (name, body) => {
 };
 
 writeHook('pre-commit', PRE_COMMIT);
-writeHook('pre-push', PRE_PUSH);
+if (preCommitOnly) {
+  console.log('[skip] pre-push (--pre-commit-only)');
+} else {
+  writeHook('pre-push', PRE_PUSH);
+}
 
 console.log(`
 Notes:

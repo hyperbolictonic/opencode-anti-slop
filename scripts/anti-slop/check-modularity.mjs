@@ -23,7 +23,7 @@
 
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
 import path from 'node:path';
-import { walk, stripNoise, lineOf } from './lib.mjs';
+import { walk, stripNoise, lineOf, SOURCE_EXT, IGNORE_FILE } from './lib.mjs';
 
 function parseArgs(argv) {
   const a = {
