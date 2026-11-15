@@ -1,0 +1,6 @@
+# MCP server runtime noise (see AGENTS.md)
+data/logs/
+
+# OS / tooling
+Thumbs.db
+Desktop.ini
