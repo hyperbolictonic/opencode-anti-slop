@@ -6,7 +6,7 @@
  * resolution. Keep it free of scanning logic.
  */
 
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { walk, SOURCE_EXT, IGNORE_FILE } from './lib.mjs';
 
@@ -136,7 +136,7 @@ export function gateArgs({ argv, usage, spec, defaults, allowPositionals = false
 
 /**
  * Reads `anti-slop.config.json` from process.cwd() (repo root), returning the
- * parsed object or {} when absent/invalid (with a warning on invalid).
+ * parsed object or {} when absent (warn+{} when unparsable).
  * Scripts merge: defaults < config file < CLI flags.
  *
  * Shape:
@@ -157,12 +157,18 @@ export function gateArgs({ argv, usage, spec, defaults, allowPositionals = false
 export function loadConfig() {
   const file = path.join(process.cwd(), 'anti-slop.config.json');
   if (!existsSync(file)) return {};
+  let parsed;
   try {
-    return JSON.parse(readFileSync(file, 'utf8'));
+    parsed = JSON.parse(readFileSync(file, 'utf8'));
   } catch (err) {
     console.error(`[warn] Could not parse anti-slop.config.json (${err.message}); using defaults.`);
     return {};
   }
+  if (!parsed || typeof parsed !== 'object') {
+    console.error('[warn] anti-slop.config.json is not an object; using defaults.');
+    return {};
+  }
+  return parsed;
 }
 
 /** Convert a glob (`**`, `*`, `?`) into a RegExp tested against '/'-separated rel paths. */
