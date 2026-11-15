@@ -1,12 +1,26 @@
-# opencode-anti-slop
+<div align="center">
+
+```text
+ █████╗   ███╗   ██╗████████╗ ██╗                 ███████╗  ██╗        ██████╗  ██████╗
+██╔══██╗  ████╗  ██║╚══██╔══╝ ██║                 ██╔════╝  ██║       ██╔═══██╗ ██╔══██╗
+███████║  ██╔══██║     ██║    ██║        ═════    ███████╗  ██║       ██║   ██║ ██████╔╝
+██╔══██║  ██║ ╚███║    ██║    ██║                 ╚════██║  ██║       ██║   ██║ ██╔═══╝
+██║  ██║  ██║ ╚████    ██║    ██║                 ███████║  ███████╗  ╚██████╔╝ ██║
+╚═╝  ╚═╝  ╚═╝  ╚═══    ╚═╝    ╚═╝                 ╚══════╝  ╚══════╝   ╚═════╝  ╚═╝
+```
+
+**Stop your AI coding agent from producing slop.**
+
+Agent skills + deterministic checks that force [OpenCode](https://opencode.ai)
+(and other AI coding agents) to reuse what exists, compose instead of rewrite,
+use React primitives correctly, and keep files modular — enforced at write
+time, commit time, and push time.
 
 [![ci](https://github.com/hyperbolictonic/opencode-anti-slop/actions/workflows/ci.yml/badge.svg)](https://github.com/hyperbolictonic/opencode-anti-slop/actions/workflows/ci.yml)
+![npm](https://img.shields.io/badge/install-npx--from--git-blue)
+![zero dependencies](https://img.shields.io/badge/dependencies-zero-success)
 
-**Stop your AI coding agent from producing slop.** Agent skills plus
-deterministic checks that force [OpenCode](https://opencode.ai) (and other
-AI coding agents) to reuse what exists, compose instead of rewrite, use React
-primitives correctly, and keep files modular — enforced at write time, commit
-time, and push time.
+</div>
 
 Built for **React and Node** projects. The gates run on **any JS/TS codebase**;
 the skills use the standard Agent Skills format, so they also work with Claude
@@ -59,18 +73,24 @@ are per-repo tunable; weakening the check to pass it is the one forbidden fix.
 Requires Node >= 18 and git. No npm dependencies — the kit installs clean into
 any project.
 
+One command, straight from this repo — installs skills, the `/audit-ui`
+command, gate scripts, the CI workflow, and (with `--hooks`) the git gates
+into the current directory:
+
 ```sh
-# 1. clone the kit anywhere stable
+npx --allow-git=all github:hyperbolictonic/opencode-anti-slop --hooks
+```
+
+> npm >= 11 requires `--allow-git=all` for git-hosted packages; older npm runs
+> without it. `--force` overwrites previously installed kit files; an explicit
+> target dir can be passed as the first argument.
+
+Manual equivalent (clone first, no npm involvement):
+
+```sh
 git clone https://github.com/hyperbolictonic/opencode-anti-slop.git
-
-# 2. install skills + command + scripts into your project
 node opencode-anti-slop/install.mjs path/to/your-project
-
-# 3. inside your project: generate the inventory your agents will reuse
-node scripts/anti-slop/generate-component-index.mjs
-
-# 4. (recommended) enforce at commit/push time
-node scripts/anti-slop/install-hooks.mjs
+node scripts/anti-slop/generate-component-index.mjs   # in your project
 ```
 
 The installer prints the manual steps that cannot be safely automated: an
