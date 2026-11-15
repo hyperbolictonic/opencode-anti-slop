@@ -24,6 +24,10 @@ Produce a prioritized report (no code changes — a refactor plan only):
    shells, headers). Propose the shared template + slot design.
 4. **Missing documentation**: shared components/hooks/utils whose exports lack
    a one-line `/** When to use ... */` JSDoc; list them in priority order.
+5. **Misplaced logic and abstraction candidates**: load the `abstraction-review`
+   skill and apply it to the scope — load-bearing rules implemented inside
+   presentational components, and structural twins (same skeleton, different
+   slot content) that no longer trip the exact-clone threshold.
 
 Order items by impact: duplication that will multiply next, then monoliths
 actively being extended, then layout rewrites waiting to happen, then docs.

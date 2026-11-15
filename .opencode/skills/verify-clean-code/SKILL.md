@@ -56,6 +56,14 @@ undocumented exports (the pre-commit hook runs it on staged files). Rerun
 shared exports, and confirm the new entries show their description (not `-`) in
 `docs/COMPONENT_INDEX.md`.
 
+## 5. If the task was a refactor, review what you may have missed
+
+Gates catch duplication that exists; they cannot catch load-bearing logic left
+in the wrong layer or a skeleton built twice with different fillings. When the
+task extracted components, merged duplicated flows, or moved rules between
+files, run the `abstraction-review` skill before reporting, and include its
+"Second-order opportunities" list in the report.
+
 ## 5. Report
 
 End the task with a short summary: checks run, results, files touched, and any

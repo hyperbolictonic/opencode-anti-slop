@@ -8,7 +8,7 @@ it is not itself an app. See `README.md` for the full picture and install flow.
 
 - **Skills** (`.opencode/skills/*/SKILL.md`): `reuse-before-create`,
   `layout-composition`, `react-composition-patterns`, `react-state-and-effects`,
-  `modular-architecture`, `verify-clean-code`.
+  `modular-architecture`, `abstraction-review`, `verify-clean-code`.
 - **Command** (`.opencode/commands/audit-ui.md`): `/audit-ui` refactor-plan
   generator built on the deterministic checks.
 - **Scripts** (`scripts/anti-slop/`): `generate-component-index.mjs` (builds

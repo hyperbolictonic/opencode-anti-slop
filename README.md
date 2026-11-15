@@ -26,8 +26,14 @@ drift and scripts do not.
   modular-architecture/         UI and non-UI: single-responsibility modules,
                                 ports & adapters with injected dependencies, OO
                                 composition, no god files/classes/functions.
+  abstraction-review/           Post-refactor review for duplication that has
+                                not happened yet: load-bearing rules left in UI
+                                components, structural twins, near-clone triage.
+                                Reports with a cost-ranked contract; never
+                                auto-extracts.
   verify-clean-code/            End-of-task gate: typecheck -> lint -> tests ->
-                                duplicate + modularity checks -> docs & index.
+                                duplicate + modularity + docs checks -> index
+                                freshness -> abstraction review for refactors.
 
 .opencode/commands/
   audit-ui.md                   /audit-ui — prioritized refactor plan built from
