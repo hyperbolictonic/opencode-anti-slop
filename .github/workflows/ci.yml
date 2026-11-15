@@ -21,4 +21,4 @@ jobs:
       - run: node scripts/anti-slop/check-imports.mjs --src scripts
       - run: node scripts/anti-slop/check-docs.mjs --src scripts/anti-slop
       - run: node scripts/anti-slop/check-duplicates.mjs --src scripts
-      - run: node scripts/anti-slop/generate-component-index.mjs --src scripts
+      - run: node scripts/anti-slop/generate-component-index.mjs --check

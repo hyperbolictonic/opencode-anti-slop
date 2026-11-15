@@ -16,7 +16,6 @@
  */
 
 import {
-  readdirSync,
   readFileSync,
   writeFileSync,
   existsSync,
@@ -27,14 +26,16 @@ import { walk, extractExports } from './lib.mjs';
 
 // --- args -------------------------------------------------------------------
 function parseArgs(argv) {
-  const args = { src: 'src', out: 'docs/COMPONENT_INDEX.md', root: '.' };
+  const args = { src: 'src', out: 'docs/COMPONENT_INDEX.md', root: '.', check: false };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--src') args.src = argv[++i];
     else if (a === '--out') args.out = argv[++i];
     else if (a === '--root') args.root = argv[++i];
+    else if (a === '--check') args.check = true;
     else if (a === '-h' || a === '--help') {
-      console.log('Usage: node generate-component-index.mjs [--src src] [--out docs/COMPONENT_INDEX.md] [--root .]');
+      console.log('Usage: node generate-component-index.mjs [--src src] [--out docs/COMPONENT_INDEX.md] [--root .] [--check]');
+      console.log('  --check  compare against the file on disk; exit 1 when stale (CI mode, writes nothing)');
       process.exit(0);
     } else {
       console.error(`Unknown argument: ${a}`);
@@ -85,7 +86,9 @@ for (const file of files) {
   const lines = source.split('\n').length;
   const list = index.get(kind) ?? [];
   for (const exp of exports) {
-    if (!exp.desc) missingDocs++;
+    // The docs gate exempts default exports (route entry points etc.); the
+    // generator's count must agree, or the two report different totals.
+    if (!exp.desc && exp.kind !== 'default') missingDocs++;
     list.push({ rel: file.rel, name: exp.name, kind: exp.kind, desc: exp.desc, lines });
   }
   index.set(kind, list);
@@ -101,18 +104,21 @@ if (existsSync(OUT_FILE)) {
 
 // --- render -----------------------------------------------------------------
 const KIND_ORDER = ['Layout', 'Component', 'Hook', 'Service', 'Util', 'Types', 'Module'];
+// Categories already plural keep their name; everything else takes a plain 's'.
+const PLURAL = { Types: 'Types' };
+const heading = (kind) => PLURAL[kind] ?? `${kind}s`;
 const totalExports = KIND_ORDER.reduce((n, k) => n + (index.get(k)?.length ?? 0), 0);
 
 let md = `# Component Index\n\n`;
 md += `<!-- generated: run \`node scripts/anti-slop/generate-component-index.mjs\` to regenerate -->\n\n`;
 md += `Inventory of shared layouts, components, hooks, services, and utilities under \`${args.src}/\`. `;
-md += `Generated ${new Date().toISOString().slice(0, 10)}, ${files.length} files, ${totalExports} exports.\n\n`;
+md += `${files.length} files, ${totalExports} exports.\n\n`;
 md += `> Rule of use: before creating any new component, hook, or utility, check this file first (see the \`reuse-before-create\` skill). When you add a shared abstraction, rerun the generator and fill in the "When to use" column.\n\n`;
 
 for (const kind of KIND_ORDER) {
   const list = index.get(kind);
   if (!list || list.length === 0) continue;
-  md += `## ${kind}s (${list.length})\n\n`;
+  md += `## ${heading(kind)} (${list.length})\n\n`;
   md += `| File | Export | When to use |\n|---|---|---|\n`;
   for (const e of list) {
     const doc = e.desc ? e.desc.replace(/\|/g, '\\|') : '';
@@ -121,7 +127,22 @@ for (const kind of KIND_ORDER) {
   md += `\n`;
 }
 
-md += manualNotes ? `${manualNotes}\n` : `## Manual Notes\n\n(Add notes here; they are preserved when the index is regenerated.)\n`;
+md += manualNotes ? `${manualNotes.trimEnd()}\n` : `## Manual Notes\n\n(Add notes here; they are preserved when the index is regenerated.)\n`;
+md = md.replace(/\n+$/, '\n');
+
+if (args.check) {
+  if (!existsSync(OUT_FILE)) {
+    console.error(`[x] Index check FAILED: ${OUT_FILE} does not exist. Run the generator without --check and commit the result.`);
+    process.exit(1);
+  }
+  const onDisk = readFileSync(OUT_FILE, 'utf8').replace(/\n+$/, '\n');
+  if (onDisk === md) {
+    console.log(`[ok] Component index is up to date (${OUT_FILE}).`);
+    process.exit(0);
+  }
+  console.error(`[x] Index check FAILED: ${OUT_FILE} is stale. Run \`node scripts/anti-slop/generate-component-index.mjs\` and commit the result.`);
+  process.exit(1);
+}
 
 mkdirSync(path.dirname(OUT_FILE), { recursive: true });
 writeFileSync(OUT_FILE, md);

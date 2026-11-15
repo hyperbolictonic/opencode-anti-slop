@@ -2,14 +2,17 @@
 
 <!-- generated: run `node scripts/anti-slop/generate-component-index.mjs` to regenerate -->
 
-Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. Generated 2026-11-15, 7 files, 18 exports.
+Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 8 files, 22 exports.
 
 > Rule of use: before creating any new component, hook, or utility, check this file first (see the `reuse-before-create` skill). When you add a shared abstraction, rerun the generator and fill in the "When to use" column.
 
-## Modules (18)
+## Modules (22)
 
 | File | Export | When to use |
 |---|---|---|
+| `anti-slop/check-imports.mjs` | `resolveSpecifier` | Resolve a relative specifier to a file inside `root`; null for packages/misses. |
+| `anti-slop/check-imports.mjs` | `buildImportGraph` | Build the internal import graph: relFile -> Set<relFile> (relative imports only). |
+| `anti-slop/check-imports.mjs` | `findCycles` | Find circular dependencies. Returns each cycle once, as a chain |
 | `anti-slop/cli.mjs` | `parseFlags` | Parse CLI flags uniformly across gate scripts. |
 | `anti-slop/cli.mjs` | `bootstrapGate` | Common gate bootstrap: handle -h/--help with `usage`, parse flags per `spec`, |
 | `anti-slop/cli.mjs` | `collectPathFiles` | Resolve explicit path arguments (files or directories) into { full, rel } |
@@ -20,6 +23,7 @@ Inventory of shared layouts, components, hooks, services, and utilities under `s
 | `anti-slop/lib.mjs` | `isGenerated` | True when relPath is a generated artifact (see GENERATED_FILE). |
 | `anti-slop/lib.mjs` | `walk` | Recursively list source files under `dir`, as { full, rel } with '/'-separated rel paths. |
 | `anti-slop/lib.mjs` | `stripNoise` | Remove comments and string contents so brace/regex analysis is reliable. |
+| `anti-slop/lib.mjs` | `stripComments` | Remove comments while KEEPING string contents, preserving newlines. Used |
 | `anti-slop/lib.mjs` | `tokenize` | Tokenize stripped source into normalized tokens [{ t, line }] (1-based lines): strings -> `<str>`, numbers -> `<num>`, identifiers/symbols stay literal. |
 | `anti-slop/lib.mjs` | `lineOf` | 1-based line number of char index `idx` within comment/string-stripped source. |
 | `anti-slop/lib.mjs` | `jsdocBefore` | Returns the first line of the JSDoc/TSDoc block immediately preceding |

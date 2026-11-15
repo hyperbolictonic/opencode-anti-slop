@@ -19,4 +19,4 @@ jobs:
       - run: node scripts/anti-slop/check-imports.mjs
       - run: node scripts/anti-slop/check-docs.mjs
       - run: node scripts/anti-slop/check-duplicates.mjs
-      - run: node scripts/anti-slop/generate-component-index.mjs
+      - run: node scripts/anti-slop/generate-component-index.mjs --check
