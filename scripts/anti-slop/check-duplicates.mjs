@@ -21,26 +21,29 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { stripNoise, tokenize } from './lib.mjs';
-import { loadConfig, matchesAnyGlob, bootstrapGate, resolveScanTarget } from './cli.mjs';
+import {
+  stripNoise, tokenize,
+} from './lib.mjs';
+import {
+  loadConfig, matchesAnyGlob, gateArgs, resolveScanTarget,
+} from './cli.mjs';
+import { baselineGate } from './baseline.mjs';
 
 // --- args -------------------------------------------------------------------
 // Defaults < anti-slop.config.json < CLI flags.
 const cfgDups = (loadConfig().duplicates ?? {});
-const { args, positionals } = bootstrapGate(process.argv.slice(2), {
-  usage: 'Usage: node check-duplicates.mjs [--src src] [--min-tokens 50] [--threshold 3]\n' +
-         'Config: anti-slop.config.json "duplicates" section (src, minTokens, threshold, ignore globs).',
-  spec: { '--src': 'string', '--min-tokens': 'number', '--threshold': 'number' },
+const { args } = gateArgs({
+  argv: process.argv.slice(2),
+  usage: 'Usage: node check-duplicates.mjs [--src src] [--min-tokens 50] [--threshold 3] [--baseline file] [--update-baseline]\n' +
+         'Config: anti-slop.config.json "duplicates" section (src, minTokens, threshold, ignore globs).\n' +
+         'With a baseline file (default anti-slop.baseline.json) the gate fails only on NEW clones.',
+  spec: { '--src': 'string', '--min-tokens': 'number', '--threshold': 'number', '--baseline': 'string', '--update-baseline': 'flag' },
   defaults: {
     src: cfgDups.src ?? 'src',
     minTokens: cfgDups.minTokens ?? 50,
     threshold: cfgDups.threshold ?? 3,
   },
 });
-if (positionals.length > 0) {
-  console.error(`Unexpected arguments: ${positionals.join(' ')} (this script takes flags only)`);
-  process.exit(1);
-}
 if (args.minTokens < 10) {
   console.error('min-tokens must be a number >= 10');
   process.exit(1);
@@ -177,11 +180,27 @@ console.log('\nMost duplicated files:');
 for (const w of worst) console.log(`  ${w.rel}: ${w.dup}/${w.total} lines (${((w.dup / w.total) * 100).toFixed(1)}%)`);
 console.log(`\nTotal duplicated lines: ${totalDup}/${totalAll} (${pct.toFixed(1)}%)`);
 
+// --- baseline (ratchet) mode ---------------------------------------------------
+const perFileDup = {};
+for (const [rel, set] of dupLines) if (set.size > 0) perFileDup[rel] = set.size;
+const decision = baselineGate({
+  args,
+  section: 'duplicates',
+  current: perFileDup,
+  extra: { totalDuplicatedLines: totalDup },
+  unit: 'duplicated line(s)',
+  fixLine: 'Fix: extract into existing shared modules (see the reuse-before-create skill).',
+});
+if (decision === 'ok') process.exit(0);
+if (decision === 'fail') process.exit(1);
+
 if (args.threshold > 0 && pct > args.threshold) {
   console.error(
     `\n[x] Duplicate-code check FAILED (${pct.toFixed(1)}% > ${args.threshold}%).\n` +
     '    Fix: extract duplicates into existing shared modules (see the reuse-before-create skill).\n' +
-    '    Do NOT weaken the threshold or add ignore comments to pass.'
+    '    Do NOT weaken the threshold or add ignore comments to pass.\n' +
+    '    Adopting a repo with legacy duplication? Snapshot it once:\n' +
+    `    node scripts/anti-slop/check-duplicates.mjs --update-baseline — the gate then fails only on NEW clones.`
   );
   process.exit(1);
 }

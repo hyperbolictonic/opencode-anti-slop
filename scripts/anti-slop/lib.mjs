@@ -44,11 +44,11 @@ export function walk(dir, base) {
 }
 
 /**
- * Remove comments and string contents so brace/regex analysis is reliable.
- * Newlines (including those inside strings) are preserved, so line numbers
- * computed on the output match the original source.
+ * Comment/string handling shared by both strippers below. Newlines (including
+ * those inside strings) are preserved, so line numbers computed on the output
+ * match the original source.
  */
-export function stripNoise(src) {
+function stripSource(src, blankStrings) {
   let out = '';
   let i = 0;
   const n = src.length;
@@ -67,13 +67,28 @@ export function stripNoise(src) {
     } else if (c === '"' || c === "'" || c === '`') {
       const quote = c;
       i++;
-      while (i < n && src[i] !== quote) {
-        if (src[i] === '\\') i++;
-        if (src[i] === '\n') out += '\n';
-        i++;
+      if (blankStrings) {
+        while (i < n && src[i] !== quote) {
+          if (src[i] === '\\') i++;
+          if (src[i] === '\n') out += '\n';
+          i++;
+        }
+        i++; // closing quote
+        out += '""';
+      } else {
+        out += quote;
+        while (i < n && src[i] !== quote) {
+          if (src[i] === '\\' && i + 1 < n) {
+            out += src[i] + src[i + 1];
+            i += 2;
+            continue;
+          }
+          out += src[i];
+          i++;
+        }
+        out += quote;
+        i++; // closing quote
       }
-      i++; // closing quote
-      out += '""';
     } else {
       out += c;
       i++;
@@ -83,32 +98,21 @@ export function stripNoise(src) {
 }
 
 /**
- * Remove comments while KEEPING string contents, preserving newlines. Used
- * where the text inside strings matters (import specifier parsing) but
- * comment noise must not create false edges.
+ * Remove comments and blank string contents so brace/regex analysis is
+ * reliable. Newlines are preserved, so line numbers computed on the output
+ * match the original source.
+ */
+export function stripNoise(src) {
+  return stripSource(src, true);
+}
+
+/**
+ * Remove comments while KEEPING string contents verbatim — used where the
+ * text inside strings matters (import specifier parsing) but comment noise
+ * must not create false edges.
  */
 export function stripComments(src) {
-  let out = '';
-  let i = 0;
-  const n = src.length;
-  while (i < n) {
-    const c = src[i];
-    const next = src[i + 1];
-    if (c === '/' && next === '/') {
-      while (i < n && src[i] !== '\n') i++;
-    } else if (c === '/' && next === '*') {
-      i += 2;
-      while (i < n && !(src[i] === '*' && src[i + 1] === '/')) {
-        if (src[i] === '\n') out += '\n';
-        i++;
-      }
-      i += 2;
-    } else {
-      out += c;
-      i++;
-    }
-  }
-  return out;
+  return stripSource(src, false);
 }
 
 const TOKEN_RE =

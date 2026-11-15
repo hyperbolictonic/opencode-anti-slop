@@ -1,12 +1,12 @@
-/**
- * cli.mjs — shared CLI/config plumbing for the anti-slop gate scripts.
+﻿/**
+ * cli.mjs â€” shared CLI/config plumbing for the anti-slop gate scripts.
  *
  * Zero dependencies (Node >= 18, ESM). Source-scanning helpers live in lib.mjs;
  * this module handles flag parsing, per-repo config loading, and path-to-file
  * resolution. Keep it free of scanning logic.
  */
 
-import { readFileSync, existsSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { walk, SOURCE_EXT, IGNORE_FILE } from './lib.mjs';
 
@@ -118,6 +118,20 @@ export function resolveScanTarget(src) {
   return walk(abs, abs);
 }
 
+/**
+ * bootstrapGate plus the standard positional validation most gates share.
+ * Pass allowPositionals: true for gates that accept file-path arguments
+ * (git-hook staged mode).
+ */
+export function gateArgs({ argv, usage, spec, defaults, allowPositionals = false }) {
+  const { args, positionals } = bootstrapGate(argv, { usage, spec, defaults });
+  if (!allowPositionals && positionals.length > 0) {
+    console.error(`Unexpected arguments: ${positionals.join(' ')} (this script takes flags only)`);
+    process.exit(1);
+  }
+  return { args, positionals };
+}
+
 // --- per-repo config ----------------------------------------------------------
 
 /**
@@ -131,11 +145,14 @@ export function resolveScanTarget(src) {
  *                   "ignore": ["collections/**"] },
  *   "modularity": { "src": "src", "maxFileLines": 300, "maxFunctionLines": 80,
  *                   "maxClassMethods": 10 },
- *   "docs":       { "src": "src" }
+ *   "docs":       { "src": "src", "ignorePaths": ["app/(payload)/**"],
+ *                   "ignoreExports": ["metadata", "dynamic"] },
+ *   "imports":    { "src": "src", "deny": [{ "from": "src/domain/**",
+ *                   "forbid": "src/infra/**" }] }
  * }
  *
- * `ignore` (duplicates only) excludes framework-idiomatic declarative files
- * (collection configs, generated tables) whose repetition is shape, not logic.
+ * `ignore` (duplicates) and `ignorePaths` (docs) exclude framework-idiomatic
+ * declarative files whose repetition is shape, not logic.
  */
 export function loadConfig() {
   const file = path.join(process.cwd(), 'anti-slop.config.json');

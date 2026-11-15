@@ -23,7 +23,10 @@ import { readFileSync, existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { stripComments } from './lib.mjs';
-import { loadConfig, bootstrapGate, resolveScanTarget, matchesAnyGlob } from './cli.mjs';
+import {
+  loadConfig, gateArgs, resolveScanTarget, matchesAnyGlob,
+} from './cli.mjs';
+import { loadBaseline, saveBaseline, compareSets, BASELINE_FILE } from './baseline.mjs';
 
 // --- parsing ------------------------------------------------------------------
 
@@ -146,36 +149,33 @@ export function findCycles(graph) {
 const isMain =
   process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
 
-if (isMain) {
-  const cfgImports = loadConfig().imports ?? {};
-  const { args, positionals } = bootstrapGate(process.argv.slice(2), {
-    usage: 'Usage: node check-imports.mjs [--src src] [--report-only]\n' +
-      'Config: anti-slop.config.json "imports" section (src, deny: [{from, forbid}]).',
-    spec: { '--src': 'string', '--report-only': 'flag' },
-    defaults: { src: cfgImports.src ?? 'src' },
-  });
-  if (positionals.length > 0) {
-    console.error(`Unexpected arguments: ${positionals.join(' ')} (this script takes flags only)`);
-    process.exit(1);
-  }
-
-  const src = path.resolve(args.src);
-  if (!existsSync(src) || !statSync(src).isDirectory()) {
-    console.error(`Source directory not found: ${src}`);
-    process.exit(1);
-  }
-  const files = resolveScanTarget(args.src);
-  const graph = buildImportGraph(files, src);
-  const deny = Array.isArray(cfgImports.deny) ? cfgImports.deny : [];
-
+/** Evaluate cycles + deny rules against the graph, printing findings.
+ * Returns the violation count. Deny-rule violations are never baselined:
+ * rules are declared deliberately, so violating one is new debt by definition.
+ */
+function evaluateBoundaries(graph, cycles, deny, baseline) {
   let violations = 0;
+  const cycleKeys = cycles.map((chain) => [...chain.slice(0, -1)].sort().join('~'));
 
-  const cycles = findCycles(graph);
   if (cycles.length > 0) {
-    console.log(`Circular dependencies (${cycles.length}):`);
-    for (const chain of cycles.slice(0, 20)) {
-      console.log(`  ${chain.join(' -> ')}`);
-      violations++;
+    if (baseline?.imports) {
+      const { added } = compareSets(cycleKeys, baseline.imports.cycles);
+      if (added.length === 0) {
+        console.log(`[ok] No NEW cycles (${cycles.length} baselined cycle(s) remain; ${graph.size} files).`);
+      } else {
+        console.log(`NEW circular dependencies (${added.length}):`);
+        for (const key of added.slice(0, 20)) {
+          const chain = cycles.find((c) => [...c.slice(0, -1)].sort().join('~') === key);
+          console.log(`  ${chain ? chain.join(' -> ') : key}`);
+        }
+        violations += added.length;
+      }
+    } else {
+      console.log(`Circular dependencies (${cycles.length}):`);
+      for (const chain of cycles.slice(0, 20)) {
+        console.log(`  ${chain.join(' -> ')}`);
+        violations++;
+      }
     }
   }
 
@@ -194,6 +194,42 @@ if (isMain) {
       }
     }
   }
+  return violations;
+}
+
+function main() {
+  const cfgImports = loadConfig().imports ?? {};
+  const { args } = gateArgs({
+    argv: process.argv.slice(2),
+    usage: 'Usage: node check-imports.mjs [--src src] [--report-only] [--baseline file] [--update-baseline]\n' +
+      'Config: anti-slop.config.json "imports" section (src, deny: [{from, forbid}]).\n' +
+      'With a baseline file (default anti-slop.baseline.json) the gate fails only on NEW cycles.',
+    spec: { '--src': 'string', '--report-only': 'flag', '--baseline': 'string', '--update-baseline': 'flag' },
+    defaults: { src: cfgImports.src ?? 'src' },
+  });
+
+  const src = path.resolve(args.src);
+  if (!existsSync(src) || !statSync(src).isDirectory()) {
+    console.error(`Source directory not found: ${src}`);
+    process.exit(1);
+  }
+  const files = resolveScanTarget(args.src);
+  const graph = buildImportGraph(files, src);
+  const deny = Array.isArray(cfgImports.deny) ? cfgImports.deny : [];
+
+  const cycles = findCycles(graph);
+  const cycleKeys = cycles.map((chain) => [...chain.slice(0, -1)].sort().join('~'));
+
+  if (args.updateBaseline) {
+    const file = args.baseline ?? BASELINE_FILE;
+    saveBaseline(file, { imports: { cycles: [...cycleKeys].sort() } });
+    console.log(`[ok] Baseline written to ${file} (${cycleKeys.length} cycle(s)).`);
+    console.log('    Commit it. The gate now fails only on NEW cycles; shrink the baseline as you break them.');
+    process.exit(0);
+  }
+
+  const baseline = loadBaseline(args.baseline);
+  const violations = evaluateBoundaries(graph, cycles, deny, baseline);
 
   if (violations === 0) {
     if (deny.length === 0) {
@@ -211,3 +247,5 @@ if (isMain) {
   );
   process.exit(args.reportOnly ? 0 : 1);
 }
+
+if (isMain) main();

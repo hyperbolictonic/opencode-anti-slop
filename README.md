@@ -220,6 +220,29 @@ Each gate reads `anti-slop.config.json` from the repo root (defaults shown):
 - CLI flags override the config; the config overrides defaults. Hooks call the
   scripts bare, so the config governs them automatically.
 
+## Adopting a repo with legacy debt: baseline mode
+
+Whole-tree gates fail on pre-existing debt, and a red CI on day one trains
+people to ignore it. The solution is a **ratchet baseline**: snapshot today's
+debt once, and gates fail only on violations **newer** than the snapshot.
+
+```sh
+# one-time, per gate — writes/merges anti-slop.baseline.json
+node scripts/anti-slop/check-modularity.mjs --update-baseline
+node scripts/anti-slop/check-duplicates.mjs --update-baseline
+node scripts/anti-slop/check-docs.mjs --update-baseline
+```
+
+Commit the baseline file. From then on the gates pass while the tree is no
+worse than the snapshot, and fail the moment anyone adds new debt. After
+cleanups, re-run `--update-baseline` to shrink the baseline — the goal is for
+it to reach empty. The baseline records accepted debt; do **not** update it to
+absorb new debt.
+
+`check-imports` baselines cycles the same way; `imports.deny` layer-rule
+violations are never baselined (rules are declared deliberately, so violating
+one is always new).
+
 ## What counts as duplication — and what doesn't
 
 - **Counts:** logic whose copies can drift — repeated guards, repeated

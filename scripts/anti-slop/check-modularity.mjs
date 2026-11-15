@@ -26,17 +26,23 @@ import path from 'node:path';
 import {
   stripNoise, lineOf,
 } from './lib.mjs';
-import { loadConfig, bootstrapGate, collectPathFiles, resolveScanTarget } from './cli.mjs';
+import {
+  loadConfig, gateArgs, resolveScanTarget, collectPathFiles,
+} from './cli.mjs';
+import { baselineGate } from './baseline.mjs';
 
 // Defaults < anti-slop.config.json < CLI flags.
 const cfgMod = ((loadConfig().modularity) ?? {});
-const { args, positionals } = bootstrapGate(process.argv.slice(2), {
-  usage: 'Usage: node check-modularity.mjs [paths...] [--src src] [--max-file-lines 300] [--max-function-lines 80] [--max-class-methods 10] [--report-only]\n' +
+const { args, positionals } = gateArgs({
+  argv: process.argv.slice(2),
+  usage: 'Usage: node check-modularity.mjs [paths...] [--src src] [--max-file-lines 300] [--max-function-lines 80] [--max-class-methods 10] [--report-only] [--baseline file] [--update-baseline]\n' +
          'Config: anti-slop.config.json "modularity" section (src, maxFileLines, maxFunctionLines, maxClassMethods).\n' +
-         'With path arguments, checks exactly those files (git-hook staged mode).',
+         'With path arguments, checks exactly those files (git-hook staged mode).\n' +
+         'With a baseline file (default anti-slop.baseline.json) the gate fails only on NEW violations.',
   spec: {
     '--src': 'string', '--max-file-lines': 'number', '--max-function-lines': 'number',
     '--max-class-methods': 'number', '--report-only': 'flag',
+    '--baseline': 'string', '--update-baseline': 'flag',
   },
   defaults: {
     src: cfgMod.src ?? 'src',
@@ -44,8 +50,34 @@ const { args, positionals } = bootstrapGate(process.argv.slice(2), {
     maxFunctionLines: cfgMod.maxFunctionLines ?? 80,
     maxClassMethods: cfgMod.maxClassMethods ?? 10,
   },
+  allowPositionals: true,
 });
 const paths = positionals;
+
+const CONTROL_KEYWORDS = new Set(['if', 'for', 'while', 'switch', 'catch']);
+
+/** True when the `{` at openBraceIdx opens a control-flow block (if/for/while/
+ * switch/catch): the `{` is preceded by a `)` whose matching `(` follows one of
+ * the control keywords. `foo(x) {` (method shorthand) is NOT control flow. */
+function isControlFlow(stripped, openBraceIdx) {
+  let j = openBraceIdx - 1;
+  let depth = 0;
+  while (j >= 0) {
+    const ch = stripped[j];
+    if (ch === ')') depth++;
+    else if (ch === '(') {
+      depth--;
+      if (depth === 0) break;
+    }
+    j--;
+  }
+  if (j < 0) return false;
+  let k = j - 1;
+  while (k >= 0 && /\s/.test(stripped[k])) k--;
+  const end = k;
+  while (k >= 0 && /[\w$]/.test(stripped[k])) k--;
+  return CONTROL_KEYWORDS.has(stripped.slice(k + 1, end + 1));
+}
 
 function analyze(source, limits) {
   const findings = [];
@@ -74,7 +106,10 @@ function analyze(source, limits) {
       // detect `class X ... {`
       const head = stripped.slice(Math.max(0, i - 200), i);
       const cm = /(?:^|[\s;}])class\s+([A-Za-z0-9_$]+)[^{}]*$/.exec(head);
-      const isFn = prev === ')' || head.trimEnd().endsWith('=>');
+      // `if (x) {`, `for (...) {` etc. end in `)` like a function body but are
+      // control flow — excluded by the keyword before their opening paren.
+      let isFn = head.trimEnd().endsWith('=>');
+      if (!isFn && prev === ')') isFn = !isControlFlow(stripped, i);
       if (cm && classStart === null) {
         classStart = { name: cm[1], declIdx: i, braceDepth: depth, methods: 0 };
       } else if (classStart && classStart.braceDepth !== null && depth === classStart.braceDepth + 1 && prev === ')') {
@@ -126,14 +161,20 @@ const limits = {
 };
 
 let violations = 0;
+const perFileKinds = {};
+const fileLines = {};
 for (const file of files) {
   const { findings, totalLines } = analyze(readFileSync(file.full, 'utf8'), limits);
+  fileLines[file.rel] = totalLines;
   if (findings.length === 0) continue;
   console.log(`${file.rel} (${totalLines} lines):`);
+  const kinds = {};
   for (const f of findings) {
     console.log(`  [${f.kind}] line ${f.line}: ${f.detail}`);
+    kinds[f.kind] = (kinds[f.kind] ?? 0) + 1;
     violations++;
   }
+  perFileKinds[file.rel] = kinds;
 }
 
 if (violations === 0) {
@@ -141,10 +182,25 @@ if (violations === 0) {
   process.exit(0);
 }
 
+// --- baseline (ratchet) mode ---------------------------------------------------
+const decision = baselineGate({
+  args,
+  section: 'modularity',
+  current: perFileKinds,
+  kindCounts: true,
+  unit: 'violation(s)',
+  showKind: true,
+  fixLine: 'Fix: split by responsibility (see the modular-architecture skill).',
+});
+if (decision === 'ok') process.exit(0);
+if (decision === 'fail') process.exit(1);
+
 console.log(`\n${violations} size-budget violation(s) in ${files.length} file(s).`);
 console.error(
   '[x] Modularity check FAILED.\n' +
   '    Fix: split by responsibility (see the modular-architecture skill) — transport/service/domain/data,\n' +
-  '    smaller functions, smaller public surfaces. Do NOT compress code, raise budgets, or disable the check.'
+  '    smaller functions, smaller public surfaces. Do NOT compress code, raise budgets, or disable the check.\n' +
+  '    Adopting a repo with legacy violations? Snapshot them once:\n' +
+  '    node scripts/anti-slop/check-modularity.mjs --update-baseline — the gate then fails only on NEW ones.'
 );
 process.exit(args.reportOnly ? 0 : 1);

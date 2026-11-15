@@ -26,7 +26,9 @@ It tokenizes the source tree and fails when copy-paste duplication exceeds the
 threshold (defaults tuned for typical repos; adjust in the target repo if it
 has legacy duplication). If it flags your new code: extract into the existing
 shared module (see reuse-before-create) rather than adjusting the threshold.
-Never weaken the check to make it pass.
+Never weaken the check to make it pass. Repos with a committed
+`anti-slop.baseline.json` instead fail only on duplication newer than the
+baseline — do not update the baseline to absorb your new debt.
 
 ## 3. Modularity check
 
@@ -37,6 +39,7 @@ node scripts/anti-slop/check-modularity.mjs
 Flags files over ~300 lines, functions over ~80, and classes with > ~10
 public methods. The files you touched must pass. If the repo has pre-existing
 violations elsewhere, report them — do not drive-by-fix unrelated files.
+With a committed baseline, the gate fails only on violations beyond it.
 
 ## 4. Import-boundary check
 
