@@ -1,6 +1,6 @@
 ---
 name: Verify Clean Code
-description: Deterministic end-of-task verification — lint, typecheck, tests, duplicate-code detection, and component-index freshness. Trigger before marking ANY coding task complete.
+description: Deterministic end-of-task verification — lint, typecheck, tests, duplicate-code detection, import boundaries, docs, and component-index freshness. Trigger before marking ANY coding task complete.
 ---
 
 # Verify Clean Code
@@ -17,8 +17,6 @@ Run from the repo root. Derive exact commands from `package.json` — do not gue
    the full suite only if the change is cross-cutting.
 
 ## 2. Duplicate-code check
-
-Run:
 
 ```sh
 node scripts/anti-slop/check-duplicates.mjs
@@ -40,7 +38,17 @@ Flags files over ~300 lines, functions over ~80, and classes with > ~10
 public methods. The files you touched must pass. If the repo has pre-existing
 violations elsewhere, report them — do not drive-by-fix unrelated files.
 
-## 4. Documentation of shared exports
+## 4. Import-boundary check
+
+```sh
+node scripts/anti-slop/check-imports.mjs
+```
+
+Fails on circular dependencies and on any `imports.deny` layer rules the repo
+has declared. A cycle means two responsibilities are fused — extract the shared
+part into a module both can import; never fix a cycle with a re-export shim.
+
+## 5. Documentation of shared exports
 
 Every shared component, hook, util, service, or type you added or changed must
 carry a one-line JSDoc above the export:
@@ -56,7 +64,7 @@ undocumented exports (the pre-commit hook runs it on staged files). Rerun
 shared exports, and confirm the new entries show their description (not `-`) in
 `docs/COMPONENT_INDEX.md`.
 
-## 5. If the task was a refactor, review what you may have missed
+## 6. If the task was a refactor, review what you may have missed
 
 Gates catch duplication that exists; they cannot catch load-bearing logic left
 in the wrong layer or a skeleton built twice with different fillings. When the
@@ -64,7 +72,7 @@ task extracted components, merged duplicated flows, or moved rules between
 files, run the `abstraction-review` skill before reporting, and include its
 "Second-order opportunities" list in the report.
 
-## 6. Report
+## 7. Report
 
 End the task with a short summary: checks run, results, files touched, and any
 pre-existing issues you noticed but did not fix (report, don't drive-by-fix).

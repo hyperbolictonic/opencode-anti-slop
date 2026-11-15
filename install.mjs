@@ -60,6 +60,14 @@ const scriptsDest = path.join(target, 'scripts', 'anti-slop');
 mkdirSync(path.dirname(scriptsDest), { recursive: true });
 copyOverwrite(scriptsSrc, scriptsDest);
 
+// --- CI workflow template -----------------------------------------------------
+const templateSrc = path.join(kitRoot, 'templates', 'anti-slop-ci.yml');
+const templateDest = path.join(target, '.github', 'workflows', 'anti-slop.yml');
+if (existsSync(templateSrc)) {
+  mkdirSync(path.dirname(templateDest), { recursive: true });
+  copyOverwrite(templateSrc, templateDest);
+}
+
 // --- commands ----------------------------------------------------------------
 // Copy command FILES individually so a pre-existing commands dir doesn't nest
 // (dir-into-dir copy would produce commands/commands/x.md → /commands/x).

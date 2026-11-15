@@ -49,6 +49,9 @@ echo "[anti-slop] docs check on staged files..."
 # shellcheck disable=SC2086
 node scripts/anti-slop/check-docs.mjs $staged || exit 1
 
+echo "[anti-slop] import-boundary report (non-blocking; cycles are tree-wide)..."
+node scripts/anti-slop/check-imports.mjs --report-only || true
+
 echo "[anti-slop] duplicate-code report (non-blocking):"
 node scripts/anti-slop/check-duplicates.mjs --min-tokens 20 --threshold 0 || true
 
@@ -59,6 +62,9 @@ const PRE_PUSH = `#!/bin/sh
 # anti-slop pre-push gate (installed by scripts/anti-slop/install-hooks.mjs)
 echo "[anti-slop] duplicate-code gate..."
 node scripts/anti-slop/check-duplicates.mjs || exit 1
+
+echo "[anti-slop] import-boundary gate..."
+node scripts/anti-slop/check-imports.mjs || exit 1
 
 echo "[anti-slop] project checks (--if-present)..."
 npm run lint --if-present || exit 1
