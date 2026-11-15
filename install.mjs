@@ -133,6 +133,9 @@ Manual setup in ${target} (one-time):
 
 4. ESLint: enable eslint-plugin-react-hooks (and the React Compiler eslint
    plugin if the project uses the compiler) so hook misuse fails in the linter.
+   Consider ignoring the vendored gate scripts from your repo lint:
+   \`{ ignores: ['scripts/anti-slop/**'] }\` in eslint.config — they are
+   self-linted by this kit's own CI.
 
 5. Generate the first inventory:  node scripts/anti-slop/generate-component-index.mjs
 

@@ -22,7 +22,7 @@
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { walk, stripComments } from './lib.mjs';
+import { stripComments } from './lib.mjs';
 import { loadConfig, bootstrapGate, resolveScanTarget, matchesAnyGlob } from './cli.mjs';
 
 // --- parsing ------------------------------------------------------------------
@@ -196,7 +196,11 @@ if (isMain) {
   }
 
   if (violations === 0) {
-    console.log(`[ok] Import-boundary check passed (${graph.size} files, no cycles, ${deny.length} layer rule(s)).`);
+    if (deny.length === 0) {
+      console.log(`[ok] No cycles (${graph.size} files). Cycles-only gate: no imports.deny rules configured — declare some (see README "Tuning per repo") to enforce layer direction.`);
+    } else {
+      console.log(`[ok] Import-boundary check passed (${graph.size} files, no cycles, ${deny.length} layer rule(s)).`);
+    }
     process.exit(0);
   }
 

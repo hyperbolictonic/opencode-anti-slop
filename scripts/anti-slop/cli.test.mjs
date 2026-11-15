@@ -7,9 +7,6 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
 
 import { bootstrapGate, globToRegex, matchesAnyGlob, parseFlags } from './cli.mjs';
 

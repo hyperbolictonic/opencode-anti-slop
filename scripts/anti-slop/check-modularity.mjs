@@ -21,10 +21,10 @@
  * --report-only prints findings but always exits 0.
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
-  walk, stripNoise, lineOf,
+  stripNoise, lineOf,
 } from './lib.mjs';
 import { loadConfig, bootstrapGate, collectPathFiles, resolveScanTarget } from './cli.mjs';
 

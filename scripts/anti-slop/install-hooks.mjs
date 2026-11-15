@@ -12,7 +12,7 @@
  * Existing hooks are never overwritten without --force.
  */
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 
 const force = process.argv.includes('--force');
