@@ -1,18 +1,37 @@
 {
   "name": "opencode-anti-slop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "OpenCode enforcement kit: agent skills plus deterministic gates that keep AI-generated React and Node code modular, DRY, and documented",
   "license": "MIT",
   "type": "module",
-  "bin": {
-    "opencode-anti-slop": "./install.mjs"
-  },
+  "bin": "install.mjs",
   "files": [
     "install.mjs",
     "templates",
     "scripts/anti-slop",
     ".opencode"
   ],
+  "keywords": [
+    "opencode",
+    "ai-agents",
+    "agent-skills",
+    "claude-code",
+    "react",
+    "nodejs",
+    "typescript",
+    "code-quality",
+    "dry",
+    "technical-debt",
+    "lint",
+    "git-hooks",
+    "ci"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hyperbolictonic/opencode-anti-slop.git"
+  },
+  "homepage": "https://github.com/hyperbolictonic/opencode-anti-slop#readme",
+  "bugs": "https://github.com/hyperbolictonic/opencode-anti-slop/issues",
   "engines": {
     "node": ">=18"
   },

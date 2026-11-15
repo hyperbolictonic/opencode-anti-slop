@@ -27,6 +27,40 @@ the skills use the standard Agent Skills format, so they also work with Claude
 Code by copying them into `.claude/skills/`. The scripts and git hooks are
 agent-agnostic.
 
+## Quick start
+
+One command — installs skills, the `/audit-ui` command, gate scripts, the CI
+workflow, and (with `--hooks`) the git gates into the current directory:
+
+```sh
+npx opencode-anti-slop --hooks
+```
+
+> **npm >= 11 and the kit is git-hosted?** Use
+> `npx --allow-git=all github:hyperbolictonic/opencode-anti-slop --hooks`.
+> The `--allow-git=all` flag is npm's gate for git-hosted packages; older npm
+> runs without it. `--force` overwrites previously installed kit files; an
+> explicit target dir can be passed as the first argument.
+
+Manual equivalent (clone first, no npm involvement):
+
+```sh
+git clone https://github.com/hyperbolictonic/opencode-anti-slop.git
+node opencode-anti-slop/install.mjs path/to/your-project
+node scripts/anti-slop/generate-component-index.mjs   # in your project
+```
+
+Requires Node >= 18 and git. No npm dependencies — the kit installs clean into
+any project. The installer prints the manual steps that cannot be safely
+automated: an `AGENTS.md` snippet, optional `opencode.json` instructions,
+`package.json` scripts, and the ESLint hooks plugin.
+
+Skills are auto-discovered by OpenCode from `.opencode/skills/` in the target
+repo — no registration needed. They are advertised to the model by their
+`description` and load on demand via the `skill` tool. The `/audit-ui` command
+arrives with the kit and produces a prioritized refactor plan from the same
+deterministic checks.
+
 ## The problem
 
 AI agents write code that works and rots: the same layout rebuilt per page, the
@@ -67,35 +101,6 @@ src/lib/monolith.ts (321 lines):
 
 Every failure message names the fix and the skill that owns it. Gate thresholds
 are per-repo tunable; weakening the check to pass it is the one forbidden fix.
-
-## Quick start
-
-Requires Node >= 18 and git. No npm dependencies — the kit installs clean into
-any project.
-
-One command, straight from this repo — installs skills, the `/audit-ui`
-command, gate scripts, the CI workflow, and (with `--hooks`) the git gates
-into the current directory:
-
-```sh
-npx --allow-git=all github:hyperbolictonic/opencode-anti-slop --hooks
-```
-
-> npm >= 11 requires `--allow-git=all` for git-hosted packages; older npm runs
-> without it. `--force` overwrites previously installed kit files; an explicit
-> target dir can be passed as the first argument.
-
-Manual equivalent (clone first, no npm involvement):
-
-```sh
-git clone https://github.com/hyperbolictonic/opencode-anti-slop.git
-node opencode-anti-slop/install.mjs path/to/your-project
-node scripts/anti-slop/generate-component-index.mjs   # in your project
-```
-
-The installer prints the manual steps that cannot be safely automated: an
-`AGENTS.md` snippet, optional `opencode.json` instructions, `package.json`
-scripts, and the ESLint hooks plugin.
 
 ## What's inside
 
