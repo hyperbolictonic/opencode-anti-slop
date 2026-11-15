@@ -1,5 +1,5 @@
 {
-  "name": "anti-slop-kit",
+  "name": "opencode-anti-slop",
   "version": "0.1.0",
   "description": "OpenCode enforcement kit: agent skills plus deterministic gates that keep AI-generated React and Node code modular, DRY, and documented",
   "license": "MIT",

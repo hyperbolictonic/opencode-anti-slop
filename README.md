@@ -1,9 +1,14 @@
-# anti_slop_system
+# opencode-anti-slop
 
 A reusable **OpenCode enforcement kit** that makes AI coding agents produce
-consistent, well-architected React and Node code instead of slop: rewritten
-layouts, duplicated components/hooks/utils, misused `useEffect`/`useMemo`/
-`useCallback`, and Context abuse.
+consistent, well-architected code instead of slop: rewritten layouts, duplicated
+components/hooks/utils, misused `useEffect`/`useMemo`/`useCallback`, Context
+abuse, and monolithic files.
+
+**Scope:** built and battle-tested for **React and Node**. The skills carry the
+React-specific rules; the deterministic gates work on **any JS/TS codebase**;
+the system design (inventory + drift principle + gates + hooks) ports to other
+stacks by swapping the skill texts.
 
 It works as **skills** (instructions the agent loads on demand) plus
 **deterministic scripts** (checks that fail the build), because prompts alone
