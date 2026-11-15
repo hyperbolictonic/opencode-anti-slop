@@ -181,24 +181,26 @@ export function jsdocBefore(source, idx) {
  */
 export function extractExports(source) {
   const found = [];
-  const add = (name, kind, index) => {
-    if (name && !found.some((e) => e.name === name)) found.push({ name, kind, index });
+  const add = (name, kind, index, isDefault) => {
+    if (name && !found.some((e) => e.name === name)) {
+      found.push({ name, kind, index, isDefault: Boolean(isDefault) });
+    }
   };
 
   for (const m of source.matchAll(/export\s+(?:default\s+)?(?:async\s+)?function\s*\*?\s*([A-Za-z0-9_$]+)/g)) {
-    add(m[1], 'function', m.index);
+    add(m[1], 'function', m.index, m[0].startsWith('export default'));
   }
   for (const m of source.matchAll(/export\s+(?:default\s+)?const\s+([A-Za-z0-9_$]+)/g)) {
-    add(m[1], /=>/.test(source.slice(m.index, m.index + 200)) ? 'function' : 'value', m.index);
+    add(m[1], /=>/.test(source.slice(m.index, m.index + 200)) ? 'function' : 'value', m.index, m[0].startsWith('export default'));
   }
   for (const m of source.matchAll(/export\s+(?:abstract\s+)?class\s+([A-Za-z0-9_$]+)/g)) {
-    add(m[1], 'class', m.index);
+    add(m[1], 'class', m.index, m[0].startsWith('export default'));
   }
   for (const m of source.matchAll(/export\s+(?:type|interface)\s+([A-Za-z0-9_$]+)/g)) {
-    add(m[1], 'type', m.index);
+    add(m[1], 'type', m.index, false);
   }
   if (/export\s+default\s+(?!function|class|const)/.test(source)) {
-    add('default', 'default', source.length);
+    add('default', 'default', source.length, true);
   }
   return found.map((e) => ({ ...e, desc: jsdocBefore(source, e.index) }));
 }

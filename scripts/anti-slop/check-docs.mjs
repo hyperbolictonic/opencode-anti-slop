@@ -19,20 +19,44 @@
 
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import { walk, extractExports } from './lib.mjs';
-import { loadConfig, bootstrapGate, collectPathFiles, resolveScanTarget } from './cli.mjs';
+import { extractExports } from './lib.mjs';
+import { loadConfig, bootstrapGate, collectPathFiles, resolveScanTarget, matchesAnyGlob } from './cli.mjs';
 
 // Defaults < anti-slop.config.json < CLI flags.
 const cfgDocs = loadConfig().docs ?? {};
 const { args, positionals } = bootstrapGate(process.argv.slice(2), {
   usage: 'Usage: node check-docs.mjs [paths...] [--src src] [--report-only]\n' +
-         'Config: anti-slop.config.json "docs" section (src).\n' +
+         'Config: anti-slop.config.json "docs" section (src, ignorePaths, ignoreExports).\n' +
          'With path arguments, checks exactly those files (git-hook staged mode).',
   spec: { '--src': 'string', '--report-only': 'flag' },
   defaults: { src: cfgDocs.src ?? 'src' },
 });
 
-const files = positionals.length > 0 ? collectPathFiles(positionals) : resolveScanTarget(args.src);
+// Framework-owned exports that are configuration, not shared surface.
+// Defaulted on when a Next.js config is present (segment config exports).
+const NEXTJS_EXPORTS = [
+  'metadata', 'generateMetadata', 'viewport', 'generateViewport', 'dynamic',
+  'revalidate', 'runtime', 'dynamicParams', 'fetchCache', 'maxDuration',
+  'preferredRegion', 'generateStaticParams', 'generateImageMetadata',
+];
+const hasNextConfig = existsSync(path.join(process.cwd(), 'next.config.js')) ||
+  existsSync(path.join(process.cwd(), 'next.config.mjs')) ||
+  existsSync(path.join(process.cwd(), 'next.config.ts'));
+const ignoreExports = Array.isArray(cfgDocs.ignoreExports)
+  ? cfgDocs.ignoreExports
+  : (hasNextConfig ? NEXTJS_EXPORTS : []);
+const ignorePaths = Array.isArray(cfgDocs.ignorePaths) ? cfgDocs.ignorePaths : [];
+
+const allFiles = positionals.length > 0 ? collectPathFiles(positionals) : resolveScanTarget(args.src);
+// ignorePaths globs match paths relative to the scan root AND repo-relative.
+const files = allFiles.filter((f) => {
+  const repoRel = path.relative(process.cwd(), f.full).split(path.sep).join('/');
+  return !matchesAnyGlob(f.rel, ignorePaths) && !matchesAnyGlob(repoRel, ignorePaths);
+});
+const excludedCount = allFiles.length - files.length;
+if (excludedCount > 0 && ignorePaths.length > 0) {
+  console.log(`Ignoring ${excludedCount} file(s) matching docs.ignorePaths (${ignorePaths.join(', ')}).`);
+}
 
 let missing = 0;
 const detail = [];
@@ -43,7 +67,11 @@ for (const file of files) {
   } catch {
     continue;
   }
-  const undocumented = exports.filter((e) => !e.desc && e.name !== 'default');
+  // Default exports are entry points (route files, pages) consumed by the
+  // framework, not shared surface; exempt them the way the index count does.
+  const undocumented = exports.filter(
+    (e) => !e.desc && !e.isDefault && !ignoreExports.includes(e.name),
+  );
   if (undocumented.length === 0) continue;
   missing += undocumented.length;
   detail.push({ rel: file.rel, names: undocumented.map((e) => e.name) });
