@@ -61,10 +61,16 @@ mkdirSync(path.dirname(scriptsDest), { recursive: true });
 copyOverwrite(scriptsSrc, scriptsDest);
 
 // --- commands ----------------------------------------------------------------
+// Copy command FILES individually so a pre-existing commands dir doesn't nest
+// (dir-into-dir copy would produce commands/commands/x.md → /commands/x).
 const commandsSrc = path.join(kitRoot, '.opencode', 'commands');
 const commandsDest = path.join(target, '.opencode', 'commands');
 mkdirSync(commandsDest, { recursive: true });
-copyOverwrite(commandsSrc, commandsDest);
+for (const entry of readdirSync(commandsSrc, { withFileTypes: true })) {
+  if (entry.isFile() && entry.name.endsWith('.md')) {
+    copyOverwrite(path.join(commandsSrc, entry.name), path.join(commandsDest, entry.name));
+  }
+}
 
 // --- manual steps -----------------------------------------------------------
 console.log(`
