@@ -21,60 +21,31 @@
  * --report-only prints findings but always exits 0.
  */
 
-import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import { walk, stripNoise, lineOf, SOURCE_EXT, IGNORE_FILE, loadConfig } from './lib.mjs';
+import {
+  walk, stripNoise, lineOf,
+} from './lib.mjs';
+import { loadConfig, bootstrapGate, collectPathFiles, resolveScanTarget } from './cli.mjs';
 
 // Defaults < anti-slop.config.json < CLI flags.
 const cfgMod = ((loadConfig().modularity) ?? {});
-
-function parseArgs(argv) {
-  const a = {
+const { args, positionals } = bootstrapGate(process.argv.slice(2), {
+  usage: 'Usage: node check-modularity.mjs [paths...] [--src src] [--max-file-lines 300] [--max-function-lines 80] [--max-class-methods 10] [--report-only]\n' +
+         'Config: anti-slop.config.json "modularity" section (src, maxFileLines, maxFunctionLines, maxClassMethods).\n' +
+         'With path arguments, checks exactly those files (git-hook staged mode).',
+  spec: {
+    '--src': 'string', '--max-file-lines': 'number', '--max-function-lines': 'number',
+    '--max-class-methods': 'number', '--report-only': 'flag',
+  },
+  defaults: {
     src: cfgMod.src ?? 'src',
     maxFileLines: cfgMod.maxFileLines ?? 300,
     maxFunctionLines: cfgMod.maxFunctionLines ?? 80,
     maxClassMethods: cfgMod.maxClassMethods ?? 10,
-    reportOnly: false, paths: [],
-  };
-  for (let i = 2; i < argv.length; i++) {
-    const s = argv[i];
-    if (s === '--src') a.src = argv[++i];
-    else if (s === '--max-file-lines') a.maxFileLines = Number(argv[++i]);
-    else if (s === '--max-function-lines') a.maxFunctionLines = Number(argv[++i]);
-    else if (s === '--max-class-methods') a.maxClassMethods = Number(argv[++i]);
-    else if (s === '--report-only') a.reportOnly = true;
-    else if (s === '-h' || s === '--help') {
-      console.log('Usage: node check-modularity.mjs [paths...] [--src src] [--max-file-lines 300] [--max-function-lines 80] [--max-class-methods 10] [--report-only]');
-      console.log('Config: anti-slop.config.json "modularity" section (src, maxFileLines, maxFunctionLines, maxClassMethods).');
-      process.exit(0);
-    } else a.paths.push(s);
-  }
-  for (const [k, v] of Object.entries(a)) {
-    if (typeof v === 'number' && (Number.isNaN(v) || v < 0)) {
-      console.error(`Invalid value for ${k}`);
-      process.exit(1);
-    }
-  }
-  return a;
-}
-
-const args = parseArgs(process.argv);
-
-function collectFiles(paths) {
-  const files = [];
-  for (const p of paths) {
-    const abs = path.resolve(p);
-    if (!existsSync(abs)) {
-      console.error(`Path not found: ${p}`);
-      process.exit(1);
-    }
-    if (statSync(abs).isDirectory()) files.push(...walk(abs, abs));
-    else if (SOURCE_EXT.has(path.extname(abs)) && !IGNORE_FILE.test(abs)) {
-      files.push({ full: abs, rel: path.relative(process.cwd(), abs).split(path.sep).join('/') });
-    }
-  }
-  return files;
-}
+  },
+});
+const paths = positionals;
 
 function analyze(source, limits) {
   const findings = [];
@@ -146,11 +117,7 @@ function analyze(source, limits) {
 }
 
 // --- run ---------------------------------------------------------------------
-const files = args.paths.length > 0 ? collectFiles(args.paths) : (() => {
-  const dir = path.resolve(args.src);
-  if (!existsSync(dir)) { console.error(`Source directory not found: ${dir}`); process.exit(1); }
-  return walk(dir, dir);
-})();
+const files = positionals.length > 0 ? collectPathFiles(positionals) : resolveScanTarget(args.src);
 
 const limits = {
   maxFileLines: args.maxFileLines,

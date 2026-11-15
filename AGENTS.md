@@ -45,7 +45,10 @@ it is not itself an app. See `README.md` for the full picture and install flow.
   literals normalized so renamed-but-copied code is caught), must fail loudly
   (`exit 1`), and its fix guidance points at extraction, not threshold tuning.
 - The modularity gate has a per-file mode (path args = staged files) so hooks
-  never block on legacy code; `--report-only` always exits 0.
+  never block on legacy code; `--report-only` always exits 0. `check-docs.mjs`
+  (same per-file mode) fails on exports without a one-line JSDoc — it is the
+  enforcement behind index maintenance; the generator counts undocumented
+  exports but does not gate.
 - JSDoc: the index generator reads the `/** ... */` block immediately above an
   export for the "When to use" column; undocumented exports are counted and
   reported.

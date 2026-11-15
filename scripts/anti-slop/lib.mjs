@@ -1,26 +1,31 @@
 /**
- * lib.mjs — shared helpers for the anti-slop gate scripts.
+ * lib.mjs — shared source-scanning helpers for the anti-slop gate scripts.
  *
- * Zero dependencies (Node >= 18, ESM). Each gate script imports from here so
- * scanning/classification logic exists in exactly one place. Keep this module
- * free of any script-specific behavior (no args parsing, no I/O decisions).
+ * Zero dependencies (Node >= 18, ESM). CLI/config plumbing lives in cli.mjs;
+ * this module is pure scanning: file discovery, noise stripping, tokenizing,
+ * export extraction. Keep it free of I/O decisions and argument parsing.
  */
 
-import { readdirSync, readFileSync, existsSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import path from 'node:path';
 
+/** Directories never scanned by the gates (deps, build output, tests, tooling). */
 export const EXCLUDE_DIRS = new Set([
   'node_modules', 'dist', 'build', 'out', '.next', '.turbo',
   'coverage', 'storybook-static', '__tests__', '__mocks__',
 ]);
+/** Filename patterns never gated: test/spec/story files and type declaration shims. */
 export const IGNORE_FILE = /(\.test|\.spec|\.stories|\.d)\.[tj]sx?$/;
 
 /** Generated files that must never be gated (sizes/counts are machine-owned). */
 export const GENERATED_FILE = /(^|\/)(payload-types|next-env)\.d?ts$/;
 
+/** True when relPath is a generated artifact (see GENERATED_FILE). */
 export function isGenerated(relPath) {
   return GENERATED_FILE.test(relPath);
 }
+
+/** Source file extensions the gates scan. */
 export const SOURCE_EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.mts']);
 
 /** Recursively list source files under `dir`, as { full, rel } with '/'-separated rel paths. */
@@ -77,14 +82,10 @@ export function stripNoise(src) {
   return out;
 }
 
-/**
- * Tokenize comment/string-stripped source into normalized tokens:
- * strings -> `<str>`, numbers -> `<num>`, identifiers/symbols stay literal.
- * Returns [{ t, line }] with 1-based line numbers.
- */
 const TOKEN_RE =
   /"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`|[A-Za-z_$][\w$]*|\d+(?:\.\d+)?|\S/g;
 
+/** Tokenize stripped source into normalized tokens [{ t, line }] (1-based lines): strings -> `<str>`, numbers -> `<num>`, identifiers/symbols stay literal. */
 export function tokenize(stripped) {
   const tokens = [];
   for (const m of stripped.matchAll(TOKEN_RE)) {
@@ -108,56 +109,46 @@ export function lineOf(stripped, idx) {
   return line;
 }
 
-// --- per-repo config ----------------------------------------------------------
 /**
- * Reads `anti-slop.config.json` from process.cwd() (repo root), returning the
- * parsed object or {} when absent/invalid (with a warning on invalid).
- * Scripts merge: defaults < config file < CLI flags.
- *
- * Shape:
- * {
- *   "duplicates": { "src": "src", "minTokens": 50, "threshold": 3,
- *                   "ignore": ["src/collections/**"] },
- *   "modularity": { "src": "src", "maxFileLines": 300, "maxFunctionLines": 80,
- *                   "maxClassMethods": 10 }
- * }
- *
- * `ignore` (duplicates only) excludes framework-idiomatic declarative files
- * (collection configs, generated tables) whose repetition is shape, not logic.
+ * Returns the first line of the JSDoc/TSDoc block immediately preceding
+ * source index `idx`, or null if there is none.
  */
-export function loadConfig() {
-  const file = path.join(process.cwd(), 'anti-slop.config.json');
-  if (!existsSync(file)) return {};
-  try {
-    return JSON.parse(readFileSync(file, 'utf8'));
-  } catch (err) {
-    console.error(`[warn] Could not parse anti-slop.config.json (${err.message}); using defaults.`);
-    return {};
-  }
+export function jsdocBefore(source, idx) {
+  const m = /\/\*\*([\s\S]*?)\*\/\s*$/.exec(source.slice(0, idx));
+  if (!m) return null;
+  const lines = m[1]
+    .split('\n')
+    .map((l) => l.replace(/^\s*\*+\s?/, '').trim())
+    .filter(Boolean);
+  if (lines.length === 0) return null;
+  const desc = lines[0];
+  return desc.startsWith('@') ? null : desc; // tag-only blocks are not usage docs
 }
 
-/** Convert a glob (`**`, `*`, `?`) into a RegExp tested against '/'-separated rel paths. */
-export function globToRegex(glob) {
-  let pattern = '';
-  for (let i = 0; i < glob.length; i++) {
-    const c = glob[i];
-    if (c === '*') {
-      if (glob[i + 1] === '*') {
-        pattern += '[\\s\\S]*';
-        i++;
-      } else {
-        pattern += '[^/]*';
-      }
-    } else if (c === '?') {
-      pattern += '[^/]';
-    } else {
-      pattern += c.replace(/[.+^${}()|[\]\\]/g, '\\$&');
-    }
-  }
-  return new RegExp(`^${pattern}$`);
-}
+/**
+ * Extract exported declarations from source: [{ name, kind, index, desc }].
+ * `desc` is the JSDoc first line (null when undocumented).
+ */
+export function extractExports(source) {
+  const found = [];
+  const add = (name, kind, index) => {
+    if (name && !found.some((e) => e.name === name)) found.push({ name, kind, index });
+  };
 
-/** True when relPath matches any ignore glob. */
-export function matchesAnyGlob(relPath, globs) {
-  return globs.length > 0 && globs.some((g) => globToRegex(g).test(relPath));
+  for (const m of source.matchAll(/export\s+(?:default\s+)?(?:async\s+)?function\s*\*?\s*([A-Za-z0-9_$]+)/g)) {
+    add(m[1], 'function', m.index);
+  }
+  for (const m of source.matchAll(/export\s+(?:default\s+)?const\s+([A-Za-z0-9_$]+)/g)) {
+    add(m[1], /=>/.test(source.slice(m.index, m.index + 200)) ? 'function' : 'value', m.index);
+  }
+  for (const m of source.matchAll(/export\s+(?:abstract\s+)?class\s+([A-Za-z0-9_$]+)/g)) {
+    add(m[1], 'class', m.index);
+  }
+  for (const m of source.matchAll(/export\s+(?:type|interface)\s+([A-Za-z0-9_$]+)/g)) {
+    add(m[1], 'type', m.index);
+  }
+  if (/export\s+default\s+(?!function|class|const)/.test(source)) {
+    add('default', 'default', source.length);
+  }
+  return found.map((e) => ({ ...e, desc: jsdocBefore(source, e.index) }));
 }

@@ -50,9 +50,11 @@ carry a one-line JSDoc above the export:
 export function TwoColumnLayout({ sidebar, children }: TwoColumnLayoutProps) {
 ```
 
-Rerun `node scripts/anti-slop/generate-component-index.mjs` after adding or
-removing shared exports, and confirm the new entries show their description
-(not `-`) in `docs/COMPONENT_INDEX.md`.
+This is mechanically enforced: `node scripts/anti-slop/check-docs.mjs` fails on
+undocumented exports (the pre-commit hook runs it on staged files). Rerun
+`node scripts/anti-slop/generate-component-index.mjs` after adding or removing
+shared exports, and confirm the new entries show their description (not `-`) in
+`docs/COMPONENT_INDEX.md`.
 
 ## 5. Report
 

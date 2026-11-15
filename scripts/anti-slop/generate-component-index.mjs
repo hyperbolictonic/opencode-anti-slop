@@ -23,7 +23,7 @@ import {
   mkdirSync,
 } from 'node:fs';
 import path from 'node:path';
-import { walk } from './lib.mjs';
+import { walk, extractExports } from './lib.mjs';
 
 // --- args -------------------------------------------------------------------
 function parseArgs(argv) {
@@ -52,47 +52,6 @@ const OUT_FILE = path.resolve(args.root, args.out);
 if (!existsSync(SRC_DIR)) {
   console.error(`Source directory not found: ${SRC_DIR}`);
   process.exit(1);
-}
-
-// --- export extraction ------------------------------------------------------
-/**
- * Returns the first line of the JSDoc/TSDoc block immediately preceding
- * source index `idx`, or null if there is none.
- */
-function jsdocBefore(source, idx) {
-  const m = /\/\*\*([\s\S]*?)\*\/\s*$/.exec(source.slice(0, idx));
-  if (!m) return null;
-  const lines = m[1]
-    .split('\n')
-    .map((l) => l.replace(/^\s*\*+\s?/, '').trim())
-    .filter(Boolean);
-  if (lines.length === 0) return null;
-  const desc = lines[0];
-  return desc.startsWith('@') ? null : desc; // tag-only blocks are not usage docs
-}
-
-function extractExports(source) {
-  const found = [];
-  const add = (name, kind, index) => {
-    if (name && !found.some((e) => e.name === name)) found.push({ name, kind, index });
-  };
-
-  for (const m of source.matchAll(/export\s+(?:default\s+)?(?:async\s+)?function\s*\*?\s*([A-Za-z0-9_$]+)/g)) {
-    add(m[1], 'function', m.index);
-  }
-  for (const m of source.matchAll(/export\s+(?:default\s+)?const\s+([A-Za-z0-9_$]+)/g)) {
-    add(m[1], /=>/.test(source.slice(m.index, m.index + 200)) ? 'function' : 'value', m.index);
-  }
-  for (const m of source.matchAll(/export\s+(?:abstract\s+)?class\s+([A-Za-z0-9_$]+)/g)) {
-    add(m[1], 'class', m.index);
-  }
-  for (const m of source.matchAll(/export\s+(?:type|interface)\s+([A-Za-z0-9_$]+)/g)) {
-    add(m[1], 'type', m.index);
-  }
-  if (/export\s+default\s+(?!function|class|const)/.test(source)) {
-    add('default', 'default', source.length);
-  }
-  return found.map((e) => ({ ...e, desc: jsdocBefore(source, e.index) }));
 }
 
 // --- classification ---------------------------------------------------------

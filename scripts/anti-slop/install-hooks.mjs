@@ -45,6 +45,10 @@ echo "[anti-slop] modularity check on staged files..."
 # shellcheck disable=SC2086
 node scripts/anti-slop/check-modularity.mjs $staged || exit 1
 
+echo "[anti-slop] docs check on staged files..."
+# shellcheck disable=SC2086
+node scripts/anti-slop/check-docs.mjs $staged || exit 1
+
 echo "[anti-slop] duplicate-code report (non-blocking):"
 node scripts/anti-slop/check-duplicates.mjs --min-tokens 20 --threshold 0 || true
 

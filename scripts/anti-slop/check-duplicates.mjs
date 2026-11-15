@@ -20,52 +20,38 @@
  *   threshold = max allowed duplicated-lines percent; 0 disables failing.
  */
 
-import { readdirSync, readFileSync, existsSync } from 'node:fs';
+import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
 import path from 'node:path';
-import { walk, stripNoise, tokenize, lineOf, loadConfig, matchesAnyGlob } from './lib.mjs';
+import {
+  walk, stripNoise, tokenize, lineOf,
+} from './lib.mjs';
+import { loadConfig, matchesAnyGlob, bootstrapGate, resolveScanTarget } from './cli.mjs';
 
 // --- args -------------------------------------------------------------------
 // Defaults < anti-slop.config.json < CLI flags.
 const cfgDups = (loadConfig().duplicates ?? {});
-
-function parseArgs(argv) {
-  const a = {
+const { args, positionals } = bootstrapGate(process.argv.slice(2), {
+  usage: 'Usage: node check-duplicates.mjs [--src src] [--min-tokens 50] [--threshold 3]\n' +
+         'Config: anti-slop.config.json "duplicates" section (src, minTokens, threshold, ignore globs).',
+  spec: { '--src': 'string', '--min-tokens': 'number', '--threshold': 'number' },
+  defaults: {
     src: cfgDups.src ?? 'src',
     minTokens: cfgDups.minTokens ?? 50,
     threshold: cfgDups.threshold ?? 3,
-  };
-  for (let i = 2; i < argv.length; i++) {
-    const s = argv[i];
-    if (s === '--src') a.src = argv[++i];
-    else if (s === '--min-tokens') a.minTokens = Number(argv[++i]);
-    else if (s === '--threshold') a.threshold = Number(argv[++i]);
-    else if (s === '-h' || s === '--help') {
-      console.log('Usage: node check-duplicates.mjs [--src src] [--min-tokens 50] [--threshold 3]');
-      console.log('Config: anti-slop.config.json "duplicates" section (src, minTokens, threshold, ignore globs).');
-      process.exit(0);
-    } else {
-      console.error(`Unknown argument: ${s}`);
-      process.exit(1);
-    }
-  }
-  if (Number.isNaN(a.minTokens) || a.minTokens < 10) {
-    console.error('--min-tokens must be a number >= 10');
-    process.exit(1);
-  }
-  return a;
-}
-
-const args = parseArgs(process.argv);
-const IGNORE_GLOBS = Array.isArray(cfgDups.ignore) ? cfgDups.ignore : [];
-const SRC_DIR = path.resolve(args.src);
-
-if (!existsSync(SRC_DIR)) {
-  console.error(`Source directory not found: ${SRC_DIR}`);
+  },
+});
+if (positionals.length > 0) {
+  console.error(`Unexpected arguments: ${positionals.join(' ')} (this script takes flags only)`);
   process.exit(1);
 }
+if (args.minTokens < 10) {
+  console.error('min-tokens must be a number >= 10');
+  process.exit(1);
+}
+const IGNORE_GLOBS = Array.isArray(cfgDups.ignore) ? cfgDups.ignore : [];
 
 // --- detect -------------------------------------------------------------------
-const allFiles = walk(SRC_DIR, SRC_DIR);
+const allFiles = resolveScanTarget(args.src);
 const files = allFiles.filter((f) => !matchesAnyGlob(f.rel, IGNORE_GLOBS));
 const excludedCount = allFiles.length - files.length;
 if (IGNORE_GLOBS.length > 0) {
