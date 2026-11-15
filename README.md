@@ -62,9 +62,25 @@ install.mjs                     Installs skills + commands + scripts into a
                                 target repo.
 ```
 
+## Tests
+
+The gates are regression-tested (`node --test`, zero dependencies — same
+constraint as the scripts). The `jsdocBefore` cases exist because a one-line
+regex version of that function shipped a real bug: every export in an index
+reported the file's first docblock. If you touch the scanners, `npm test` is
+not optional.
+
+```
+npm test        # unit tests for lib.mjs and cli.mjs
+npm run gates   # the kit runs its own gates on its own source
+npm run index   # regenerate the kit's own component index
+```
+
+CI (`.github/workflows/ci.yml`) runs the tests and the self-gates on Node 20/22/24.
+
 ## Install into a project
 
-From this kit's root:
+Clone this repo anywhere stable, then from the kit's root:
 
 ```sh
 node install.mjs path/to/your-react-or-node-repo

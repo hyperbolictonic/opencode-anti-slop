@@ -1,0 +1,15 @@
+{
+  "name": "anti-slop-kit",
+  "version": "0.1.0",
+  "description": "OpenCode enforcement kit: agent skills plus deterministic gates that keep AI-generated React and Node code modular, DRY, and documented",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test \"scripts/**/*.test.mjs\"",
+    "gates": "node scripts/anti-slop/check-modularity.mjs --src scripts/anti-slop && node scripts/anti-slop/check-docs.mjs --src scripts/anti-slop && node scripts/anti-slop/check-duplicates.mjs --src scripts",
+    "index": "node scripts/anti-slop/generate-component-index.mjs --src scripts"
+  }
+}

@@ -3,7 +3,7 @@
 ## What this repo is
 
 The **source kit** for a reusable OpenCode anti-slop enforcement system, applied to
-the owner's **React and Node** apps. This repo produces the enforcement artifacts;
+your **React and Node** projects. This repo produces the enforcement artifacts;
 it is not itself an app. See `README.md` for the full picture and install flow.
 
 - **Skills** (`.opencode/skills/*/SKILL.md`): `reuse-before-create`,

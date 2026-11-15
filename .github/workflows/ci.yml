@@ -1,0 +1,23 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test
+      # The kit enforces itself: its own gates must pass on its own source.
+      - run: node scripts/anti-slop/check-modularity.mjs --src scripts/anti-slop
+      - run: node scripts/anti-slop/check-docs.mjs --src scripts/anti-slop
+      - run: node scripts/anti-slop/check-duplicates.mjs --src scripts
+      - run: node scripts/anti-slop/generate-component-index.mjs --src scripts

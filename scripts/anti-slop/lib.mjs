@@ -14,11 +14,11 @@ export const EXCLUDE_DIRS = new Set([
   'node_modules', 'dist', 'build', 'out', '.next', '.turbo',
   'coverage', 'storybook-static', '__tests__', '__mocks__',
 ]);
-/** Filename patterns never gated: test/spec/story files and type declaration shims. */
-export const IGNORE_FILE = /(\.test|\.spec|\.stories|\.d)\.[tj]sx?$/;
+/** Filename patterns never gated: test/spec/story files (any JS/TS extension incl. mjs/mts) and type declaration shims. */
+export const IGNORE_FILE = /(\.test|\.spec|\.stories|\.d)\.[mc]?[tj]sx?$/;
 
 /** Generated files that must never be gated (sizes/counts are machine-owned). */
-export const GENERATED_FILE = /(^|\/)(payload-types|next-env)\.d?ts$/;
+export const GENERATED_FILE = /(^|\/)(payload-types|next-env)(\.d)?\.ts$/;
 
 /** True when relPath is a generated artifact (see GENERATED_FILE). */
 export function isGenerated(relPath) {
