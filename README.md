@@ -17,7 +17,7 @@ use React primitives correctly, and keep files modular — enforced at write
 time, commit time, and push time.
 
 [![ci](https://github.com/hyperbolictonic/opencode-anti-slop/actions/workflows/ci.yml/badge.svg)](https://github.com/hyperbolictonic/opencode-anti-slop/actions/workflows/ci.yml)
-![npm](https://img.shields.io/badge/install-npx--from--git-blue)
+[![npm](https://img.shields.io/npm/v/opencode-anti-slop)](https://www.npmjs.com/package/opencode-anti-slop)
 ![zero dependencies](https://img.shields.io/badge/dependencies-zero-success)
 
 </div>
@@ -36,7 +36,7 @@ workflow, and (with `--hooks`) the git gates into the current directory:
 npx opencode-anti-slop --hooks
 ```
 
-> **npm >= 11 and the kit is git-hosted?** Use
+> **npm >= 11 and installing from GitHub instead of npm?** Use
 > `npx --allow-git=all github:hyperbolictonic/opencode-anti-slop --hooks`.
 > The `--allow-git=all` flag is npm's gate for git-hosted packages; older npm
 > runs without it. `--force` overwrites previously installed kit files; an
