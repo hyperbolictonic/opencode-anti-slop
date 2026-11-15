@@ -2,11 +2,11 @@
 
 <!-- generated: run `node scripts/anti-slop/generate-component-index.mjs` to regenerate -->
 
-Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 9 files, 30 exports.
+Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 10 files, 31 exports.
 
 > Rule of use: before creating any new component, hook, or utility, check this file first (see the `reuse-before-create` skill). When you add a shared abstraction, rerun the generator and fill in the "When to use" column.
 
-## Modules (30)
+## Modules (31)
 
 | File | Export | When to use |
 |---|---|---|
@@ -25,6 +25,7 @@ Inventory of shared layouts, components, hooks, services, and utilities under `s
 | `anti-slop/cli.mjs` | `collectPathFiles` | Resolve explicit path arguments (files or directories) into { full, rel } |
 | `anti-slop/cli.mjs` | `resolveScanTarget` | Resolve the scan root given to a gate (--src): accepts a directory (walked) |
 | `anti-slop/cli.mjs` | `gateArgs` | bootstrapGate plus the standard positional validation most gates share. |
+| `anti-slop/cli.mjs` | `applyIgnorePaths` | Filter resolved files by a docs/duplicates-style ignore-path config: |
 | `anti-slop/cli.mjs` | `loadConfig` | " }] } |
 | `anti-slop/cli.mjs` | `globToRegex` | Convert a glob (`**`, `*`, `?`) into a RegExp tested against '/'-separated rel paths. |
 | `anti-slop/cli.mjs` | `matchesAnyGlob` | True when relPath matches any ignore glob. |

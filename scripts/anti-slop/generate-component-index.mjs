@@ -2,7 +2,7 @@
 /**
  * generate-component-index.mjs
  *
- * Scans a source tree and (re)generates docs/COMPONENT_INDEX.md — the
+ * Scans a source tree and (re)generates docs/COMPONENT_INDEX.md â€” the
  * inventory that the `reuse-before-create` skill treats as the source of
  * truth for existing layouts, components, hooks, and utilities.
  *
@@ -75,7 +75,6 @@ function classify(relPath, exports) {
 }
 
 // --- build ------------------------------------------------------------------
-const files = walk(SRC_DIR, SRC_DIR);
 const files = walk(SRC_DIR, SRC_DIR);
 // The generator and the docs gate must agree on what exists: docs.ignorePaths
 // excludes framework-owned or declarative files from both the listing and the
