@@ -1,18 +1,81 @@
 # opencode-anti-slop
 
-A reusable **OpenCode enforcement kit** that makes AI coding agents produce
-consistent, well-architected code instead of slop: rewritten layouts, duplicated
-components/hooks/utils, misused `useEffect`/`useMemo`/`useCallback`, Context
-abuse, and monolithic files.
+[![ci](https://github.com/hyperbolictonic/opencode-anti-slop/actions/workflows/ci.yml/badge.svg)](https://github.com/hyperbolictonic/opencode-anti-slop/actions/workflows/ci.yml)
 
-**Scope:** built and battle-tested for **React and Node**. The skills carry the
-React-specific rules; the deterministic gates work on **any JS/TS codebase**;
-the system design (inventory + drift principle + gates + hooks) ports to other
-stacks by swapping the skill texts.
+**Stop your AI coding agent from producing slop.** Agent skills plus
+deterministic checks that force [OpenCode](https://opencode.ai) (and other
+AI coding agents) to reuse what exists, compose instead of rewrite, use React
+primitives correctly, and keep files modular — enforced at write time, commit
+time, and push time.
 
-It works as **skills** (instructions the agent loads on demand) plus
-**deterministic scripts** (checks that fail the build), because prompts alone
-drift and scripts do not.
+Built for **React and Node** projects. The gates run on **any JS/TS codebase**;
+the skills use the standard Agent Skills format, so they also work with Claude
+Code by copying them into `.claude/skills/`. The scripts and git hooks are
+agent-agnostic.
+
+## The problem
+
+AI agents write code that works and rots: the same layout rebuilt per page, the
+same helper rewritten in three files, `useEffect` doing derived-state work,
+one 400-line file doing six jobs. Prompts like "keep it DRY" drift within a
+session and vanish between sessions. What does not drift is a script that exits
+non-zero — so this kit pairs model-level skills with deterministic gates:
+
+- the **agent** is instructed (skills) to check before building;
+- the **inventory** (`docs/COMPONENT_INDEX.md`, generated) tells it what exists;
+- the **gates** (scripts) catch whatever slips through;
+- the **hooks** (git) make violations fail loudly at commit and push.
+
+## What it catches
+
+| Slop pattern | Caught by |
+|---|---|
+| Rewritten layouts instead of reused components | `reuse-before-create` + `layout-composition` skills |
+| Duplicated components, hooks, utils, server actions | duplicate gate (token-based clone detection) |
+| Misused `useEffect`, premature `useMemo`/`useCallback`, Context abuse | `react-state-and-effects` skill |
+| Monolithic files, god classes, oversized functions | modularity gate (size budgets) |
+| Undocumented shared exports, stale component inventory | docs gate + index generator |
+| Load-bearing domain rules buried in UI components | `abstraction-review` skill (post-refactor) |
+
+A blocked commit looks like this:
+
+```text
+[anti-slop] modularity check on staged files...
+src/lib/monolith.ts (321 lines):
+  [file] line 1: 321 lines (> 300)
+  [function] line 16: 93 lines (> 80)
+  [class] line 1: class ReportOrchestrator: 12 methods (> 10)
+
+[x] Modularity check FAILED.
+    Fix: split by responsibility (see the modular-architecture skill) — transport/service/domain/data,
+    smaller functions, smaller public surfaces. Do NOT compress code, raise budgets, or disable the check.
+```
+
+Every failure message names the fix and the skill that owns it. Gate thresholds
+are per-repo tunable; weakening the check to pass it is the one forbidden fix.
+
+## Quick start
+
+Requires Node >= 18 and git. No npm dependencies — the kit installs clean into
+any project.
+
+```sh
+# 1. clone the kit anywhere stable
+git clone https://github.com/hyperbolictonic/opencode-anti-slop.git
+
+# 2. install skills + command + scripts into your project
+node opencode-anti-slop/install.mjs path/to/your-project
+
+# 3. inside your project: generate the inventory your agents will reuse
+node scripts/anti-slop/generate-component-index.mjs
+
+# 4. (recommended) enforce at commit/push time
+node scripts/anti-slop/install-hooks.mjs
+```
+
+The installer prints the manual steps that cannot be safely automated: an
+`AGENTS.md` snippet, optional `opencode.json` instructions, `package.json`
+scripts, and the ESLint hooks plugin.
 
 ## What's inside
 
@@ -43,73 +106,29 @@ drift and scripts do not.
 .opencode/commands/
   audit-ui.md                   /audit-ui — prioritized refactor plan built from
                                 the deterministic checks (duplication, monoliths,
-                                layout reuse, missing docs).
+                                layout reuse, missing docs, misplaced logic).
 
 scripts/anti-slop/
   lib.mjs                       Shared scanning helpers (walk, stripNoise,
-                                tokenize, lineOf) used by all gate scripts.
-  generate-component-index.mjs  Scans src/ and (re)generates docs/COMPONENT_INDEX.md
-                                (the inventory reuse checks are grounded in).
-                                Pulls each export's "When to use" from its JSDoc.
-  check-duplicates.mjs          Built-in copy/paste detector (token-based clone
-                                detection, zero deps); exits non-zero when
-                                duplication exceeds the threshold.
+                                tokenize, lineOf, export extraction).
+  cli.mjs                       Shared CLI/config plumbing (flag parsing,
+                                per-repo config, path resolution).
+  generate-component-index.mjs  Scans src/ and (re)generates docs/COMPONENT_INDEX.md;
+                                pulls each export's "When to use" from its JSDoc.
+  check-duplicates.mjs          Copy/paste detector (token-based, zero deps);
+                                exits non-zero when duplication exceeds the
+                                per-repo threshold.
   check-modularity.mjs          Monolith gate: file >300 / function >80 lines,
                                 class >10 methods. Per-file mode for git hooks.
   check-docs.mjs                Docs gate: fails when exports lack a one-line
-                                "When to use" JSDoc (feeds the index). Per-file
-                                mode for git hooks.
-  install-hooks.mjs             Installs pre-commit (staged-files modularity +
+                                "When to use" JSDoc. Per-file mode for hooks.
+  install-hooks.mjs             Installs pre-commit (staged files: modularity +
                                 docs, blocking) and pre-push (full duplicate
                                 gate + lint/typecheck/test) git hooks.
 
 install.mjs                     Installs skills + commands + scripts into a
                                 target repo.
 ```
-
-## Tests
-
-The gates are regression-tested (`node --test`, zero dependencies — same
-constraint as the scripts). The `jsdocBefore` cases exist because a one-line
-regex version of that function shipped a real bug: every export in an index
-reported the file's first docblock. If you touch the scanners, `npm test` is
-not optional.
-
-```
-npm test        # unit tests for lib.mjs and cli.mjs
-npm run gates   # the kit runs its own gates on its own source
-npm run index   # regenerate the kit's own component index
-```
-
-CI (`.github/workflows/ci.yml`) runs the tests and the self-gates on Node 20/22/24.
-
-## Install into a project
-
-Clone this repo anywhere stable, then from the kit's root:
-
-```sh
-node install.mjs path/to/your-react-or-node-repo
-```
-
-Then follow the printed manual steps (AGENTS.md snippet, `opencode.json`
-instructions, `package.json` scripts, ESLint hooks plugin) and generate the
-first inventory:
-
-```sh
-node scripts/anti-slop/generate-component-index.mjs
-```
-
-For git enforcement (recommended), from the target repo root:
-
-```sh
-node scripts/anti-slop/install-hooks.mjs
-```
-
-Skills are auto-discovered by OpenCode from `.opencode/skills/` in the target
-repo — no registration needed. They are advertised to the model by their
-`description` and load on demand via the `skill` tool. The `/audit-ui` command
-arrives with the kit and produces a prioritized refactor plan from the same
-deterministic checks.
 
 ## How enforcement works
 
@@ -157,10 +176,10 @@ Each gate reads `anti-slop.config.json` from the repo root (defaults shown):
 ```
 
 - `ignore` (duplicates only): globs relative to `src` for **framework-idiomatic
-  declarative files** — collection/field configs, schema registrations. Their
-  repetition is shape a framework requires, not logic that can drift; excluding
-  them keeps the gate focused on logic clones. Exclusions are printed on every
-  run, so nothing is silently ignored.
+  declarative files** — collection/field configs, generated route scaffolding.
+  Their repetition is shape a framework requires, not logic that can drift;
+  excluding them keeps the gate focused on logic clones. Exclusions are printed
+  on every run, so nothing is silently ignored.
 - CLI flags override the config; the config overrides defaults. Hooks call the
   scripts bare, so the config governs them automatically.
 
@@ -178,9 +197,42 @@ Each gate reads `anti-slop.config.json` from the repo root (defaults shown):
   validation, versions) over hand-rolled equivalents — a second source of
   truth is worse than repetition.
 
+## Tests and self-enforcement
+
+The gates are regression-tested with `node --test` (zero dependencies — same
+constraint as the scripts). The `jsdocBefore` cases exist because a one-line
+regex version of that function shipped a real bug: every export in an index
+reported the file's first docblock. If you touch the scanners, `npm test` is
+not optional.
+
+```sh
+npm test        # unit tests for lib.mjs and cli.mjs
+npm run gates   # the kit runs its own gates on its own source
+npm run index   # regenerate the kit's own component index
+```
+
+CI runs the tests and the self-gates on Node 20/22/24.
+
+## Scope, requirements and limitations
+
+- **Stacks:** React/Node rules in the skills; gates scan `.ts` `.tsx` `.js`
+  `.jsx` `.mjs` `.mts`. Other languages need their own gates — the system
+  design (inventory + drift principle + gates + hooks) still applies.
+- **Heuristics, not compilers:** the clone detector tokenizes rather than
+  parses; the modularity gate brace-matches rather than builds an AST. Treat
+  findings as strong signals, and `anti-slop.config.json` as the way to live
+  with rare false positives.
+- **Agent support:** skills follow the Agent Skills format — native for
+  OpenCode, copyable to `.claude/skills/` for Claude Code. The scripts and
+  hooks work with any agent plus git. `/audit-ui` is OpenCode-specific.
+
 ## Reusable vs. project-specific
 
 The skills are project-agnostic: they direct the agent to discover each repo's
 own structure (`package.json`, source tree, `docs/COMPONENT_INDEX.md`) at
 runtime. Tuning per project happens in the target repo's `anti-slop.config.json`
 and its own `AGENTS.md` — not by editing these skills.
+
+## License
+
+[MIT](LICENSE)
