@@ -135,6 +135,61 @@ export function gateArgs({ argv, usage, spec, defaults, allowPositionals = false
 // --- per-repo config ----------------------------------------------------------
 
 /**
+ * Filter resolved files by a docs/duplicates-style ignore-path config:
+ * globs are matched against paths relative to the scan root AND the repo
+ * root, so both conventions work. Returns the kept files and prints an
+ * exclusion notice when any glob is configured and something matched.
+ */
+export function applyIgnorePaths(files, globs, { label = 'ignorePaths', src } = {}) {
+  if (!Array.isArray(globs) || globs.length === 0) return files;
+  const kept = files.filter((f) => {
+    const repoRel = path.relative(process.cwd(), f.full).split(path.sep).join('/');
+    return !matchesAnyGlob(f.rel, globs) && !matchesAnyGlob(repoRel, globs);
+  });
+  const excluded = files.length - kept.length;
+  if (excluded > 0) {
+    const scope = src ? `relative to '${src}/' or the repo root` : 'relative to the scan root or the repo root';
+    console.log(`Ignoring ${excluded} file(s) matching ${label} (${globs.join(', ')}; ${scope}).`);
+  }
+  return kept;
+}
+
+const KNOWN_SECTIONS = new Set(['duplicates', 'modularity', 'docs', 'imports', '$schema', '_comment']);
+
+/** Light validation: unknown keys and wrong types warn instead of silently
+ * disabling the tuning (a typo like "duplicate" would otherwise run the gates
+ * on defaults with no signal why). */
+function validateConfig(parsed) {
+  const warns = [];
+  for (const key of Object.keys(parsed)) {
+    if (!KNOWN_SECTIONS.has(key)) warns.push(`unknown key "${key}" (ignored)`);
+  }
+  const num = (section, key) => {
+    const v = parsed[section]?.[key];
+    if (v !== undefined && (typeof v !== 'number' || Number.isNaN(v))) warns.push(`${section}.${key} must be a number`);
+  };
+  const arr = (section, key) => {
+    const v = parsed[section]?.[key];
+    if (v !== undefined && !Array.isArray(v)) warns.push(`${section}.${key} must be an array of globs/names`);
+  };
+  num('duplicates', 'minTokens');
+  num('duplicates', 'threshold');
+  arr('duplicates', 'ignore');
+  num('modularity', 'maxFileLines');
+  num('modularity', 'maxFunctionLines');
+  num('modularity', 'maxClassMethods');
+  arr('modularity', 'ignorePaths');
+  arr('docs', 'ignorePaths');
+  arr('docs', 'ignoreExports');
+  if (parsed.imports?.deny !== undefined && !Array.isArray(parsed.imports.deny)) {
+    warns.push('imports.deny must be an array of { from, forbid } rules');
+  }
+  if (warns.length > 0) {
+    console.error(`[warn] anti-slop.config.json: ${warns.join('; ')}.`);
+  }
+}
+
+/**
  * Reads `anti-slop.config.json` from process.cwd() (repo root), returning the
  * parsed object or {} when absent (warn+{} when unparsable).
  * Scripts merge: defaults < config file < CLI flags.
@@ -168,6 +223,7 @@ export function loadConfig() {
     console.error('[warn] anti-slop.config.json is not an object; using defaults.');
     return {};
   }
+  validateConfig(parsed);
   return parsed;
 }
 

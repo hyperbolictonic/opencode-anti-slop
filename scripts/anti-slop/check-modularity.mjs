@@ -27,7 +27,7 @@ import {
   stripNoise, lineOf,
 } from './lib.mjs';
 import {
-  loadConfig, gateArgs, resolveScanTarget, collectPathFiles,
+  loadConfig, gateArgs, collectPathFiles, resolveScanTarget, applyIgnorePaths,
 } from './cli.mjs';
 import { baselineGate } from './baseline.mjs';
 
@@ -152,7 +152,14 @@ function analyze(source, limits) {
 }
 
 // --- run ---------------------------------------------------------------------
-const files = positionals.length > 0 ? collectPathFiles(positionals) : resolveScanTarget(args.src);
+// modularity.ignorePaths exempts declarative/framework files from size
+// budgets, matching the drift principle (shape, not logic).
+const modIgnore = Array.isArray(cfgMod.ignorePaths) ? cfgMod.ignorePaths : [];
+const files = applyIgnorePaths(
+  positionals.length > 0 ? collectPathFiles(positionals) : resolveScanTarget(args.src),
+  modIgnore,
+  { label: 'modularity.ignorePaths', src: args.src },
+);
 
 const limits = {
   maxFileLines: args.maxFileLines,

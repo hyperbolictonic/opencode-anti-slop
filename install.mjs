@@ -23,7 +23,7 @@
  *   node install.mjs [target-repo-dir] [--force] [--hooks]
  */
 
-import { cpSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -104,6 +104,22 @@ for (const entry of readdirSync(commandsSrc, { withFileTypes: true })) {
   }
 }
 
+// --- starter config -----------------------------------------------------------
+// Scaffold anti-slop.config.json when the target has none, so the tuning
+// surface exists from day one. JSON has no comments; the reasoning for the
+// starter rules is printed in the manual steps below.
+const configDest = path.join(target, 'anti-slop.config.json');
+if (!existsSync(configDest)) {
+  const starter = {
+    duplicates: { src: 'src', minTokens: 50, threshold: 3, ignore: [] },
+    modularity: { src: 'src', maxFileLines: 300, maxFunctionLines: 80, maxClassMethods: 10 },
+    docs: { src: 'src', ignorePaths: [], ignoreExports: [] },
+    imports: { deny: [] },
+  };
+  writeFileSync(configDest, `${JSON.stringify(starter, null, 2)}\n`);
+  console.log(`[ok] ${configDest} (starter — tune ignore lists to your framework's declarative files)`);
+}
+
 // --- manual steps -----------------------------------------------------------
 console.log(`
 Manual setup in ${target} (one-time):
@@ -141,8 +157,21 @@ Manual setup in ${target} (one-time):
 
 6. Git gates (recommended):  git init && node scripts/anti-slop/install-hooks.mjs
    - pre-commit: modularity + docs on staged files (blocking), duplicate/import reports
-   - pre-push: full duplicate + import gates + lint/typecheck/test via --if-present
+   - pre-push: full duplicate + import gates + lint/typecheck/test via run-project-checks
    - /audit-ui in OpenCode produces a prioritized refactor plan from the same checks
+
+7. Layer direction (imports.deny): the import gate detects cycles out of the box;
+   it enforces layer direction once you declare rules in anti-slop.config.json.
+   Starter rules to adapt (paths must match your layout):
+
+   "imports": { "deny": [
+     { "from": "src/components/**", "forbid": "src/collections/**" },
+     { "from": "src/app/**", "forbid": "src/collections/**" },
+     { "from": "src/access/**", "forbid": "src/app/**" }
+   ] }
+
+   With no rules the gate prints a cycles-only notice so a green result is never
+   mistaken for full architectural enforcement.
 `);
 
 // --- optional hooks ------------------------------------------------------------

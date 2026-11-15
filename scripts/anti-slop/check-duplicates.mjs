@@ -34,10 +34,10 @@ import { baselineGate } from './baseline.mjs';
 const cfgDups = (loadConfig().duplicates ?? {});
 const { args } = gateArgs({
   argv: process.argv.slice(2),
-  usage: 'Usage: node check-duplicates.mjs [--src src] [--min-tokens 50] [--threshold 3] [--baseline file] [--update-baseline]\n' +
+  usage: 'Usage: node check-duplicates.mjs [--src src] [--min-tokens 50] [--threshold 3] [--baseline file] [--update-baseline] [--summary]\n' +
          'Config: anti-slop.config.json "duplicates" section (src, minTokens, threshold, ignore globs).\n' +
          'With a baseline file (default anti-slop.baseline.json) the gate fails only on NEW clones.',
-  spec: { '--src': 'string', '--min-tokens': 'number', '--threshold': 'number', '--baseline': 'string', '--update-baseline': 'flag' },
+  spec: { '--src': 'string', '--min-tokens': 'number', '--threshold': 'number', '--baseline': 'string', '--update-baseline': 'flag', '--summary': 'flag' },
   defaults: {
     src: cfgDups.src ?? 'src',
     minTokens: cfgDups.minTokens ?? 50,
@@ -165,7 +165,7 @@ if (regions.length === 0) {
   process.exit(0);
 }
 
-const MAX_REPORT = 40;
+const MAX_REPORT = args.summary ? 3 : 40;
 console.log(`Found ${regions.length} clone region(s). Showing up to ${MAX_REPORT}:\n`);
 for (const r of regions.slice(0, MAX_REPORT)) {
   console.log(`  ${r.aFile}:${r.aLine}-${r.aEndLine}  <->  ${r.bFile}:${r.bLine}-${r.bEndLine}  (~${r.tokens} tokens)`);
@@ -175,7 +175,7 @@ const worst = [...dupLines.entries()]
   .map(([rel, set]) => ({ rel, dup: set.size, total: totalLines.get(rel) }))
   .filter((f) => f.dup > 0)
   .sort((a, b) => b.dup / b.total - a.dup / a.total)
-  .slice(0, 5);
+  .slice(0, args.summary ? 3 : 5);
 console.log('\nMost duplicated files:');
 for (const w of worst) console.log(`  ${w.rel}: ${w.dup}/${w.total} lines (${((w.dup / w.total) * 100).toFixed(1)}%)`);
 console.log(`\nTotal duplicated lines: ${totalDup}/${totalAll} (${pct.toFixed(1)}%)`);

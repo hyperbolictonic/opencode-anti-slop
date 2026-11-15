@@ -52,8 +52,8 @@ node scripts/anti-slop/check-docs.mjs $staged || exit 1
 echo "[anti-slop] import-boundary report (non-blocking; cycles are tree-wide)..."
 node scripts/anti-slop/check-imports.mjs --report-only || true
 
-echo "[anti-slop] duplicate-code report (non-blocking):"
-node scripts/anti-slop/check-duplicates.mjs --min-tokens 20 --threshold 0 || true
+echo "[anti-slop] duplicate-code report (non-blocking; sensitivity from anti-slop.config.json):"
+node scripts/anti-slop/check-duplicates.mjs --threshold 0 --summary || true
 
 exit 0
 `;
@@ -66,10 +66,8 @@ node scripts/anti-slop/check-duplicates.mjs || exit 1
 echo "[anti-slop] import-boundary gate..."
 node scripts/anti-slop/check-imports.mjs || exit 1
 
-echo "[anti-slop] project checks (--if-present)..."
-npm run lint --if-present || exit 1
-npm run typecheck --if-present || exit 1
-npm test --if-present || exit 1
+echo "[anti-slop] project checks (lint/typecheck/test; skips are printed, not hidden)..."
+node scripts/anti-slop/run-project-checks.mjs || exit 1
 
 exit 0
 `;

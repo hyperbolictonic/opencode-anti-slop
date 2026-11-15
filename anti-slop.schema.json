@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "anti-slop gate configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "_comment": { "type": "string" },
+    "duplicates": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "src": { "type": "string", "default": "src", "description": "directory scanned for copy/paste clones" },
+        "minTokens": { "type": "integer", "default": 50, "minimum": 10, "description": "clone window size in normalized tokens; lower = more sensitive" },
+        "threshold": { "type": "number", "default": 3, "minimum": 0, "description": "max allowed duplicated-lines percent across the scanned tree; 0 disables failing (report only)" },
+        "ignore": { "type": "array", "items": { "type": "string" }, "description": "globs relative to the scan root for framework-idiomatic declarative files (e.g. collections/**); their repetition is shape, not logic" }
+      }
+    },
+    "modularity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "src": { "type": "string", "default": "src" },
+        "maxFileLines": { "type": "integer", "default": 300, "description": "files over this many lines are flagged" },
+        "maxFunctionLines": { "type": "integer", "default": 80, "description": "functions/methods over this many lines are flagged" },
+        "maxClassMethods": { "type": "integer", "default": 10, "description": "classes with more public methods are flagged" },
+        "ignorePaths": { "type": "array", "items": { "type": "string" }, "description": "globs (scan-root- or repo-relative) for files exempt from size budgets" }
+      }
+    },
+    "docs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "src": { "type": "string", "default": "src" },
+        "ignorePaths": { "type": "array", "items": { "type": "string" }, "description": "globs for files exempt from the docs gate and excluded from the component index" },
+        "ignoreExports": { "type": "array", "items": { "type": "string" }, "description": "export names that are framework configuration, not shared surface (Next.js segment config is auto-defaulted when next.config.* exists)" }
+      }
+    },
+    "imports": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "src": { "type": "string", "default": "src" },
+        "deny": {
+          "type": "array",
+          "description": "dependency-direction rules: a file matching `from` importing a file matching `forbid` is a violation. Never baselined.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "from": { "type": "string" },
+              "forbid": { "type": "string" }
+            },
+            "required": ["from", "forbid"]
+          }
+        }
+      }
+    }
+  }
+}

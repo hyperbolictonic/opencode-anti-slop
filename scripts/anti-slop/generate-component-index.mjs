@@ -23,6 +23,7 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { walk, extractExports } from './lib.mjs';
+import { loadConfig, applyIgnorePaths } from './cli.mjs';
 
 // --- args -------------------------------------------------------------------
 function parseArgs(argv) {
@@ -75,10 +76,18 @@ function classify(relPath, exports) {
 
 // --- build ------------------------------------------------------------------
 const files = walk(SRC_DIR, SRC_DIR);
+const files = walk(SRC_DIR, SRC_DIR);
+// The generator and the docs gate must agree on what exists: docs.ignorePaths
+// excludes framework-owned or declarative files from both the listing and the
+// undocumented count, so the two never report different totals.
+const ignorePaths = Array.isArray(loadConfig().docs?.ignorePaths)
+  ? loadConfig().docs.ignorePaths
+  : [];
+const filtered = applyIgnorePaths(files, ignorePaths, { label: 'docs.ignorePaths', src: args.src });
 const index = new Map(); // kind -> [{rel, name, kind, desc, lines}]
 let missingDocs = 0;
 
-for (const file of files) {
+for (const file of filtered) {
   const source = readFileSync(file.full, 'utf8');
   const exports = extractExports(source);
   if (exports.length === 0) continue;
@@ -112,7 +121,7 @@ const totalExports = KIND_ORDER.reduce((n, k) => n + (index.get(k)?.length ?? 0)
 let md = `# Component Index\n\n`;
 md += `<!-- generated: run \`node scripts/anti-slop/generate-component-index.mjs\` to regenerate -->\n\n`;
 md += `Inventory of shared layouts, components, hooks, services, and utilities under \`${args.src}/\`. `;
-md += `${files.length} files, ${totalExports} exports.\n\n`;
+md += `${filtered.length} files, ${totalExports} exports.\n\n`;
 md += `> Rule of use: before creating any new component, hook, or utility, check this file first (see the \`reuse-before-create\` skill). When you add a shared abstraction, rerun the generator and fill in the "When to use" column.\n\n`;
 
 for (const kind of KIND_ORDER) {
@@ -148,7 +157,7 @@ mkdirSync(path.dirname(OUT_FILE), { recursive: true });
 writeFileSync(OUT_FILE, md);
 
 console.log(`Wrote ${OUT_FILE}`);
-console.log(`  ${files.length} source files, ${totalExports} exports across ${KIND_ORDER.filter((k) => index.has(k)).length} categories.`);
+console.log(`  ${filtered.length} source files, ${totalExports} exports across ${KIND_ORDER.filter((k) => index.has(k)).length} categories.`);
 if (missingDocs > 0) {
   console.log(`  [doc] ${missingDocs} export(s) have no JSDoc description. Shared components/hooks/utils must carry a one-line "/** When to use ... */" above the export.`);
 }
