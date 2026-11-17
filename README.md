@@ -222,8 +222,11 @@ your tuning. Editor autocomplete:
 - **`duplicates`** — `minTokens`: clone window size in normalized tokens
   (lower = more sensitive). `threshold`: max duplicated-lines **percent across
   the scanned tree**; `0` disables failing (report only). `ignore`: globs
-  relative to `src` for **framework-idiomatic declarative files** — their
-  repetition is shape, not logic. Exclusions are printed on every run.
+  relative to the scan root for **framework-idiomatic declarative files** — their
+  repetition is shape, not logic. `includeTests` (default `false`): also scan
+  `*.test.*`/`*.spec.*` files — copy-pasted test scaffolding is logic that
+  drifts, but intentional fixture/table-test similarity adds noise, so it is
+  opt-in. Exclusions are printed on every run.
 - **`modularity`** — size budgets in lines/methods. `ignorePaths`: globs
   (scan-root- or repo-relative) for files exempt from the budgets.
 - **`docs`** — `ignorePaths`: files exempt from the docs gate **and excluded

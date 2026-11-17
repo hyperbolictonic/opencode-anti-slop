@@ -84,8 +84,9 @@ export function bootstrapGate(argv, { usage, spec, defaults }) {
  * Resolve explicit path arguments (files or directories) into { full, rel }
  * source entries, applying the same filters as walk(). Exits 1 on a missing
  * path. Used by gate scripts in git-hook staged-file mode.
+ * `includeTests` opts in to test/spec files (duplicates.includeTests).
  */
-export function collectPathFiles(paths) {
+export function collectPathFiles(paths, includeTests = false) {
   const files = [];
   for (const p of paths) {
     const abs = path.resolve(p);
@@ -94,8 +95,12 @@ export function collectPathFiles(paths) {
       process.exit(1);
     }
     if (statSync(abs).isDirectory()) {
-      files.push(...walk(abs, abs));
-    } else if (SOURCE_EXT.has(path.extname(abs)) && !IGNORE_FILE.test(abs)) {
+      files.push(...walk(abs, abs, includeTests));
+    } else if (
+      SOURCE_EXT.has(path.extname(abs)) &&
+      !isGenerated(abs.split(path.sep).join('/')) &&
+      (includeTests || !IGNORE_FILE.test(abs))
+    ) {
       files.push({ full: abs, rel: path.relative(process.cwd(), abs).split(path.sep).join('/') });
     }
   }
@@ -105,17 +110,18 @@ export function collectPathFiles(paths) {
 /**
  * Resolve the scan root given to a gate (--src): accepts a directory (walked)
  * or a single file. Exits 1 when the path does not exist.
+ * `includeTests` opts in to test/spec files (duplicates.includeTests).
  */
-export function resolveScanTarget(src) {
+export function resolveScanTarget(src, includeTests = false) {
   const abs = path.resolve(src);
   if (!existsSync(abs)) {
     console.error(`Source directory not found: ${abs}`);
     process.exit(1);
   }
   if (statSync(abs).isFile()) {
-    return collectPathFiles([src]);
+    return collectPathFiles([src], includeTests);
   }
-  return walk(abs, abs);
+  return walk(abs, abs, includeTests);
 }
 
 /**
@@ -177,9 +183,14 @@ function validateConfig(parsed) {
     const v = parsed[section]?.[key];
     if (v !== undefined && !Array.isArray(v)) warns.push(`${section}.${key} must be an array of globs/names`);
   };
+  const bool = (section, key) => {
+    const v = parsed[section]?.[key];
+    if (v !== undefined && typeof v !== 'boolean') warns.push(`${section}.${key} must be a boolean`);
+  };
   num('duplicates', 'minTokens');
   num('duplicates', 'threshold');
   arr('duplicates', 'ignore');
+  bool('duplicates', 'includeTests');
   num('modularity', 'maxFileLines');
   num('modularity', 'maxFunctionLines');
   num('modularity', 'maxClassMethods');

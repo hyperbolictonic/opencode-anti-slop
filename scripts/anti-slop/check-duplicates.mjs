@@ -35,13 +35,14 @@ const cfgDups = (loadConfig().duplicates ?? {});
 const { args } = gateArgs({
   argv: process.argv.slice(2),
   usage: 'Usage: node check-duplicates.mjs [--src src] [--min-tokens 50] [--threshold 3] [--baseline file] [--update-baseline] [--summary]\n' +
-         'Config: anti-slop.config.json "duplicates" section (src, minTokens, threshold, ignore globs).\n' +
+         'Config: anti-slop.config.json "duplicates" section (src, minTokens, threshold, ignore globs, includeTests).\n' +
          'With a baseline file (default anti-slop.baseline.json) the gate fails only on NEW clones.',
-  spec: { '--src': 'string', '--min-tokens': 'number', '--threshold': 'number', '--baseline': 'string', '--update-baseline': 'flag', '--summary': 'flag' },
+  spec: { '--src': 'string', '--min-tokens': 'number', '--threshold': 'number', '--baseline': 'string', '--update-baseline': 'flag', '--summary': 'flag', '--include-tests': 'flag' },
   defaults: {
     src: cfgDups.src ?? 'src',
     minTokens: cfgDups.minTokens ?? 50,
     threshold: cfgDups.threshold ?? 3,
+    includeTests: cfgDups.includeTests ?? false,
   },
 });
 if (args.minTokens < 10) {
@@ -51,7 +52,7 @@ if (args.minTokens < 10) {
 const IGNORE_GLOBS = Array.isArray(cfgDups.ignore) ? cfgDups.ignore : [];
 
 // --- detect -------------------------------------------------------------------
-const allFiles = resolveScanTarget(args.src);
+const allFiles = resolveScanTarget(args.src, args.includeTests);
 const files = allFiles.filter((f) => !matchesAnyGlob(f.rel, IGNORE_GLOBS));
 const excludedCount = allFiles.length - files.length;
 if (IGNORE_GLOBS.length > 0) {

@@ -13,7 +13,8 @@
         "src": { "type": "string", "default": "src", "description": "directory scanned for copy/paste clones" },
         "minTokens": { "type": "integer", "default": 50, "minimum": 10, "description": "clone window size in normalized tokens; lower = more sensitive" },
         "threshold": { "type": "number", "default": 3, "minimum": 0, "description": "max allowed duplicated-lines percent across the scanned tree; 0 disables failing (report only)" },
-        "ignore": { "type": "array", "items": { "type": "string" }, "description": "globs relative to the scan root for framework-idiomatic declarative files (e.g. collections/**); their repetition is shape, not logic" }
+        "ignore": { "type": "array", "items": { "type": "string" }, "description": "globs relative to the scan root for framework-idiomatic declarative files (e.g. collections/**); their repetition is shape, not logic" },
+        "includeTests": { "type": "boolean", "default": false, "description": "include *.test.*/*.spec.* files in the clone scan; catches copy-pasted test scaffolding, but table-driven tests and intentional fixture similarity add noise" }
       }
     },
     "modularity": {

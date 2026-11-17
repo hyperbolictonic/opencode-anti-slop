@@ -28,13 +28,17 @@ export function isGenerated(relPath) {
 /** Source file extensions the gates scan. */
 export const SOURCE_EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.mts']);
 
+/** Filenames of test/spec files — excluded from gates by default, included when
+ * a gate opts in (duplicates.includeTests). .stories and .d stay excluded always. */
+export const TEST_FILE = /(\.test|\.spec)\.[mc]?[tj]sx?$/;
+
 /** Recursively list source files under `dir`, as { full, rel } with '/'-separated rel paths.
  * Entries are sorted by name, so gate output (index rows, report order) is
  * identical across operating systems and filesystems — required for
  * generate-component-index --check to pass on a different OS than the one
  * that generated the index.
- */
-export function walk(dir, base) {
+ * `includeTests` opts in to test and spec files (default: excluded). */
+export function walk(dir, base, includeTests = false) {
   const files = [];
   const entries = [...readdirSync(dir, { withFileTypes: true })]
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
@@ -42,8 +46,12 @@ export function walk(dir, base) {
     if (entry.name.startsWith('.') || EXCLUDE_DIRS.has(entry.name)) continue;
     const full = path.join(dir, entry.name);
     const rel = path.relative(base, full).split(path.sep).join('/');
-    if (entry.isDirectory()) files.push(...walk(full, base));
-    else if (SOURCE_EXT.has(path.extname(entry.name)) && !IGNORE_FILE.test(entry.name) && !isGenerated(rel)) {
+    const isTest = TEST_FILE.test(entry.name);
+    // Test/spec files: included only on opt-in. .stories/.d and other
+    // IGNORE_FILE matches stay excluded in every mode.
+    const include = isTest ? includeTests : !IGNORE_FILE.test(entry.name);
+    if (entry.isDirectory()) files.push(...walk(full, base, includeTests));
+    else if (SOURCE_EXT.has(path.extname(entry.name)) && !isGenerated(rel) && include) {
       files.push({ full, rel });
     }
   }

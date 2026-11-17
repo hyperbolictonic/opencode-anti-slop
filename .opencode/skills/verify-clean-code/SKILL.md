@@ -67,7 +67,32 @@ undocumented exports (the pre-commit hook runs it on staged files). Rerun
 shared exports, and confirm the new entries show their description (not `-`) in
 `docs/COMPONENT_INDEX.md`.
 
-## 6. If the task was a refactor, review what you may have missed
+## 6. Testing discipline
+
+The gates run the repo's tests; they cannot judge test quality. Apply these
+rules to every test you write or touch:
+
+- **Assert behavior, not implementation.** If a test breaks when you refactor
+  without changing behavior, it is testing internals — rewrite it against the
+  public surface.
+- **Watch a new test fail once.** Run it against the unfixed code (or
+  deliberately break the assertion) before trusting it. A test that has never
+  failed may verify nothing.
+- **Never weaken an existing assertion to make a test pass.** If the
+  assertion is genuinely wrong, change the code or delete the test — and say
+  which you did and why in the task report.
+- **Reuse the repo's test factories and fixtures.** Tests follow the same
+  reuse-before-create rules as production code: a second hand-copied test
+  setup is extraction time, not a third copy.
+- **One behavior per test; table-driven cases over near-identical copies.**
+- **Do not write tests to hit a coverage number.** A hollow test that
+  executes code without verifying anything is worse than the gap it hides.
+
+If the repo enables `duplicates.includeTests` in `anti-slop.config.json`,
+the duplicate gate watches test files too — the same Rule of Two applies
+inside suites.
+
+## 7. If the task was a refactor, review what you may have missed
 
 Gates catch duplication that exists; they cannot catch load-bearing logic left
 in the wrong layer or a skeleton built twice with different fillings. When the
@@ -75,7 +100,7 @@ task extracted components, merged duplicated flows, or moved rules between
 files, run the `abstraction-review` skill before reporting, and include its
 "Second-order opportunities" list in the report.
 
-## 7. Report
+## 8. Report
 
 End the task with a short summary: checks run, results, files touched, and any
 pre-existing issues you noticed but did not fix (report, don't drive-by-fix).
