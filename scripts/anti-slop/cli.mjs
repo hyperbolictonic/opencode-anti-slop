@@ -8,7 +8,7 @@
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
-import { walk, SOURCE_EXT, IGNORE_FILE } from './lib.mjs';
+import { walk, SOURCE_EXT, IGNORE_FILE, isGenerated } from './lib.mjs';
 
 // --- CLI parsing ---------------------------------------------------------------
 
