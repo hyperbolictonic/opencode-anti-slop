@@ -2,11 +2,11 @@
 
 <!-- generated: run `node scripts/anti-slop/generate-component-index.mjs` to regenerate -->
 
-Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 10 files, 31 exports.
+Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 10 files, 33 exports.
 
 > Rule of use: before creating any new component, hook, or utility, check this file first (see the `reuse-before-create` skill). When you add a shared abstraction, rerun the generator and fill in the "When to use" column.
 
-## Modules (31)
+## Modules (33)
 
 | File | Export | When to use |
 |---|---|---|
@@ -41,6 +41,8 @@ Inventory of shared layouts, components, hooks, services, and utilities under `s
 | `anti-slop/lib.mjs` | `IGNORE_FILE` | Filename patterns never gated: test/spec/story files (any JS/TS extension incl. mjs/mts) and type declaration shims. |
 | `anti-slop/lib.mjs` | `GENERATED_FILE` | Generated files that must never be gated (sizes/counts are machine-owned). |
 | `anti-slop/lib.mjs` | `SOURCE_EXT` | Source file extensions the gates scan. |
+| `anti-slop/run-project-checks.mjs` | `detectPackageManager` | Detect the package manager from the lockfile present in `dir`. |
+| `anti-slop/run-project-checks.mjs` | `typecheckCommand` | The local-binary execution for `tsc --noEmit`, per package manager. |
 
 ## Manual Notes
 

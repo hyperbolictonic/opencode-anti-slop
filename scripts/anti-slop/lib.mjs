@@ -28,10 +28,17 @@ export function isGenerated(relPath) {
 /** Source file extensions the gates scan. */
 export const SOURCE_EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.mts']);
 
-/** Recursively list source files under `dir`, as { full, rel } with '/'-separated rel paths. */
+/** Recursively list source files under `dir`, as { full, rel } with '/'-separated rel paths.
+ * Entries are sorted by name, so gate output (index rows, report order) is
+ * identical across operating systems and filesystems — required for
+ * generate-component-index --check to pass on a different OS than the one
+ * that generated the index.
+ */
 export function walk(dir, base) {
   const files = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+  const entries = [...readdirSync(dir, { withFileTypes: true })]
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  for (const entry of entries) {
     if (entry.name.startsWith('.') || EXCLUDE_DIRS.has(entry.name)) continue;
     const full = path.join(dir, entry.name);
     const rel = path.relative(base, full).split(path.sep).join('/');

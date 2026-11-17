@@ -149,13 +149,19 @@ test('lineOf: char index to 1-based line', () => {
 
 // --- walk / isGenerated ---------------------------------------------------------
 
-test('walk: skips excluded dirs, tests, generated files', () => {
+test('walk: skips excluded dirs, tests, generated files, and is OS-stable (sorted)', () => {
   const root = mkdtempSync(path.join(tmpdir(), 'antislop-walk-'));
   try {
     mkdirSync(path.join(root, 'components'), { recursive: true });
     mkdirSync(path.join(root, 'node_modules', 'pkg'), { recursive: true });
     mkdirSync(path.join(root, 'dist'), { recursive: true });
-    writeFileSync(path.join(root, 'components', 'Card.tsx'), 'export const Card = 1;');
+    mkdirSync(path.join(root, 'aardvark'), { recursive: true });
+    // Written deliberately out of alphabetical order: walk() must sort, or
+    // generated indexes differ between filesystems (regression for #20).
+    writeFileSync(path.join(root, 'components', 'Zebra.tsx'), 'export const Zebra = 1;');
+    writeFileSync(path.join(root, 'components', 'Apple.tsx'), 'export const Apple = 1;');
+    writeFileSync(path.join(root, 'zz.ts'), 'export const zz = 1;');
+    writeFileSync(path.join(root, 'aardvark', 'first.ts'), 'export const first = 1;');
     writeFileSync(path.join(root, 'components', 'Card.test.tsx'), 'export const t = 1;');
     writeFileSync(path.join(root, 'components', 'util.test.mjs'), 'export const u = 1;');
     writeFileSync(path.join(root, 'payload-types.ts'), 'export type X = 1;');
@@ -163,7 +169,12 @@ test('walk: skips excluded dirs, tests, generated files', () => {
     writeFileSync(path.join(root, 'dist', 'out.js'), 'export const o = 1;');
 
     const rels = walk(root, root).map((f) => f.rel);
-    assert.deepEqual(rels, ['components/Card.tsx']);
+    assert.deepEqual(rels, [
+      'aardvark/first.ts',
+      'components/Apple.tsx',
+      'components/Zebra.tsx',
+      'zz.ts',
+    ]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
