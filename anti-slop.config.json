@@ -1,0 +1,19 @@
+{
+  "duplicates": {
+    "src": "scripts",
+    "minTokens": 50,
+    "threshold": 3
+  },
+  "modularity": {
+    "src": "scripts/anti-slop",
+    "maxFileLines": 300,
+    "maxFunctionLines": 80,
+    "maxClassMethods": 10
+  },
+  "docs": {
+    "src": "scripts/anti-slop"
+  },
+  "imports": {
+    "src": "scripts"
+  }
+}
