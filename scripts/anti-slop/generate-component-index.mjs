@@ -2,7 +2,7 @@
 /**
  * generate-component-index.mjs
  *
- * Scans a source tree and (re)generates docs/COMPONENT_INDEX.md â€” the
+ * Scans a source tree and (re)generates docs/COMPONENT_INDEX.md ‐ the
  * inventory that the `reuse-before-create` skill treats as the source of
  * truth for existing layouts, components, hooks, and utilities.
  *

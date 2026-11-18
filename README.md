@@ -300,6 +300,8 @@ scripts/anti-slop/
                                 (imports.deny). Per-file cycles are tree-wide.
   check-docs.mjs                Docs gate: fails when exports lack a one-line
                                 "When to use" JSDoc. Per-file mode for hooks.
+  check-encoding.mjs            Encoding guard: fails on double-encoded UTF-8
+                                (PowerShell round-trip mojibake) and BOMs.
   run-project-checks.mjs        Pre-push project checks: lockfile-based
                                 package-manager detection, tsc --noEmit
                                 fallback, skips printed not hidden.

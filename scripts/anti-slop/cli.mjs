@@ -1,5 +1,5 @@
-﻿/**
- * cli.mjs â€” shared CLI/config plumbing for the anti-slop gate scripts.
+/**
+ * cli.mjs — shared CLI/config plumbing for the anti-slop gate scripts.
  *
  * Zero dependencies (Node >= 18, ESM). Source-scanning helpers live in lib.mjs;
  * this module handles flag parsing, per-repo config loading, and path-to-file

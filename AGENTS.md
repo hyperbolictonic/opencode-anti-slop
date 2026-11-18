@@ -15,13 +15,21 @@ it is not itself an app. See `README.md` for the full picture and install flow.
   `docs/COMPONENT_INDEX.md` from JSDoc descriptions), `check-duplicates.mjs`
   (built-in clone detector), `check-modularity.mjs` (size-budget gate),
   `check-imports.mjs` (cycle + layer gate), `check-docs.mjs` (JSDoc gate),
-  `run-project-checks.mjs` (pre-push project checks with package-manager
-  detection), `install-hooks.mjs` (git pre-commit/pre-push). Shared helpers:
+  `check-encoding.mjs` (mojibake/BOM guard), `run-project-checks.mjs`
+  (pre-push project checks with package-manager detection),
+  `install-hooks.mjs` (git pre-commit/pre-push). Shared helpers:
   `lib.mjs` (scanning), `cli.mjs` (CLI/config), `baseline.mjs` (ratchet).
   Zero-dependency Node ≥ 18 ESM — do not add
   runtime npm dependencies to this repo, and do not shell out to npx-based
   tools in the gates (verified: jscpd via npx scans 0 files on some Windows
   setups).
+- **PowerShell 5.1 warning:** `Get-Content` reads UTF-8 as ANSI, so a
+  `Get-Content`/`Set-Content` round-trip double-encodes every non-ASCII
+  character (mojibake). Never round-trip repo text files through PowerShell —
+  edit with tools, or use explicit UTF-8 via
+  `[System.IO.File]::WriteAllText(..., [Text.UTF8Encoding]::new($false))`.
+  `check-encoding.mjs` fails CI on mojibake and BOMs (found in cli.mjs,
+  generate-component-index.mjs and presets/README.md this way).
 - **`install.mjs`**: copies skills + scripts into a target repo; per-repo tuning
   belongs in the target repo's `AGENTS.md`, not in these files. Framework
   presets live in `presets/<name>/manifest.json` (pure data: skills list,
