@@ -14,9 +14,11 @@ it is not itself an app. See `README.md` for the full picture and install flow.
 - **Scripts** (`scripts/anti-slop/`): `generate-component-index.mjs` (builds
   `docs/COMPONENT_INDEX.md` from JSDoc descriptions), `check-duplicates.mjs`
   (built-in clone detector), `check-modularity.mjs` (size-budget gate),
-  `install-hooks.mjs` (git pre-commit/pre-push). Shared scanning helpers live
-  in `scripts/anti-slop/lib.mjs` (`walk`, `stripNoise`, `tokenize`, `lineOf`)
-  — edit there, not per-script. Zero-dependency Node ≥ 18 ESM — do not add
+  `check-imports.mjs` (cycle + layer gate), `check-docs.mjs` (JSDoc gate),
+  `run-project-checks.mjs` (pre-push project checks with package-manager
+  detection), `install-hooks.mjs` (git pre-commit/pre-push). Shared helpers:
+  `lib.mjs` (scanning), `cli.mjs` (CLI/config), `baseline.mjs` (ratchet).
+  Zero-dependency Node ≥ 18 ESM — do not add
   runtime npm dependencies to this repo, and do not shell out to npx-based
   tools in the gates (verified: jscpd via npx scans 0 files on some Windows
   setups).

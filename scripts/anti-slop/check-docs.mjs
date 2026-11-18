@@ -59,6 +59,7 @@ const files = applyIgnorePaths(allFiles, ignorePaths, { label: 'docs.ignorePaths
 let missing = 0;
 const detail = [];
 const perFileDocs = {};
+let filesWithExports = 0;
 for (const file of files) {
   let exports;
   try {
@@ -66,6 +67,7 @@ for (const file of files) {
   } catch {
     continue;
   }
+  if (exports.length > 0) filesWithExports++;
   // Default exports are entry points (route files, pages) consumed by the
   // framework, not shared surface; exempt them the way the index count does.
   const undocumented = exports.filter(
@@ -75,6 +77,17 @@ for (const file of files) {
   perFileDocs[file.rel] = undocumented.length;
   missing += undocumented.length;
   detail.push({ rel: file.rel, names: undocumented.map((e) => e.name) });
+}
+
+// Vacuous-green guard: this gate parses JS/TS export syntax. If a real
+// codebase produced zero parsed exports, the gate is inert for that language
+// (e.g. a Python/C++ preset) — say so instead of passing silently.
+if (files.length > 0 && filesWithExports === 0) {
+  console.error(
+    `[warn] No exports found in ${files.length} file(s) — the docs gate parses JS/TS\n` +
+    'export syntax and is likely INERT for this language. A green result here is\n' +
+    'not architectural enforcement.'
+  );
 }
 
 // --- baseline (ratchet) mode ---------------------------------------------------

@@ -213,9 +213,23 @@ function main() {
     console.error(`Source directory not found: ${src}`);
     process.exit(1);
   }
-  const files = resolveScanTarget(args.src);
+  const files = resolveScanTarget(args.src, { extensions: scanExtensions(loadConfig()) });
   const graph = buildImportGraph(files, src);
   const deny = Array.isArray(cfgImports.deny) ? cfgImports.deny : [];
+
+  // Vacuous-green guard: this gate parses JS/TS import syntax. A real
+  // codebase with zero internal import edges means the gate is inert for
+  // that language (e.g. a C++/#include preset) — say so instead of passing
+  // silently.
+  let totalEdges = 0;
+  for (const edges of graph.values()) totalEdges += edges.size;
+  if (graph.size > 0 && totalEdges === 0) {
+    console.error(
+      `[warn] No internal imports found in ${graph.size} file(s) — the import gate\n` +
+      'parses JS/TS import syntax and is likely INERT for this language. A green\n' +
+      'result here is not architectural enforcement.'
+    );
+  }
 
   const cycles = findCycles(graph);
   const cycleKeys = cycles.map((chain) => [...chain.slice(0, -1)].sort().join('~'));

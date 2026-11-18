@@ -138,6 +138,8 @@ scripts/anti-slop/
                                 tokenize, lineOf, export extraction).
   cli.mjs                       Shared CLI/config plumbing (flag parsing,
                                 per-repo config, path resolution).
+  baseline.mjs                  Ratchet helpers: baseline load/save/compare
+                                and the shared baselineGate flow.
   generate-component-index.mjs  Scans src/ and (re)generates docs/COMPONENT_INDEX.md;
                                 pulls each export's "When to use" from its JSDoc.
   check-duplicates.mjs          Copy/paste detector (token-based, zero deps);
@@ -150,12 +152,19 @@ scripts/anti-slop/
                                 (imports.deny). Per-file cycles are tree-wide.
   check-docs.mjs                Docs gate: fails when exports lack a one-line
                                 "When to use" JSDoc. Per-file mode for hooks.
+  run-project-checks.mjs        Pre-push project checks: lockfile-based
+                                package-manager detection, tsc --noEmit
+                                fallback, skips printed not hidden.
   install-hooks.mjs             Installs pre-commit (staged files: modularity +
                                 docs, blocking) and pre-push (duplicate +
-                                import gates + lint/typecheck/test) git hooks.
+                                import gates + project checks) git hooks.
 
+presets/                        Framework presets: <name>/manifest.json +
+                                optional preset-local skills. See
+                                presets/README.md for the author guide.
 templates/anti-slop-ci.yml      GitHub Actions workflow the installer drops
                                 into target repos (.github/workflows/).
+anti-slop.schema.json           JSON schema for anti-slop.config.json.
 install.mjs                     Installs skills + commands + scripts + CI
                                 template into a target repo.
 ```
@@ -346,6 +355,11 @@ which every gate honours. Note that gate coverage is language-bound: the
 clone detector is near-universal, the modularity brace-matcher works for
 C-family languages, and the import/docs gates are JS-specific — a preset can
 only be as strong as the gates its language supports.
+
+Framework presets adapt the kit to other stacks — see
+[presets/README.md](presets/README.md) for the author guide, the manifest
+reference, per-gate language applicability, and the experimental→stable
+promotion bar.
 
 ## Reusable vs. project-specific
 

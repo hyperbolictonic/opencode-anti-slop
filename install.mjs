@@ -29,26 +29,22 @@
  *   node install.mjs [target-repo-dir] [--for <preset>] [--force] [--hooks]
  */
 
-import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync, readFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolvePreset, mergeStarterConfig } from './presets/resolve.mjs';
 
 const kitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 const presetsDir = path.join(kitRoot, 'presets');
 
-function availablePresets() {
-  if (!existsSync(presetsDir)) return [];
-  return readdirSync(presetsDir, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && existsSync(path.join(presetsDir, e.name, 'manifest.json')))
-    .map((e) => e.name);
-}
-
 function printHelp() {
+  const names = ['default', ...availablePresetNames(presetsDir)]
+    .filter((v, i, a) => a.indexOf(v) === i);
   console.log([
     'Usage: npx github:hyperbolictonic/opencode-anti-slop [target-dir] [--for <preset>] [--force] [--hooks]',
     '',
     '  target-dir  defaults to the current directory',
-    `  --for       install a framework preset (available: ${['default', ...availablePresets()].filter((v, i, a) => a.indexOf(v) === i).join(', ')})`,
+    `  --for       install a framework preset (available: ${names.join(', ')})`,
     '  --force     overwrite kit files that already exist in the target',
     '  --hooks     also install the git pre-commit gate (requires .git)',
   ].join('\n'));
@@ -103,30 +99,22 @@ if (kitTarget === target) {
 
 // --- preset selection ---------------------------------------------------------
 let selectedSkills = null; // null = every skill in the kit
-let presetConfig = null;
+let preset = null;
 
-if (forPreset && forPreset !== 'default') {
-  const available = availablePresets();
-  if (!available.includes(forPreset)) {
-    console.error(`Unknown preset "${forPreset}". Available: ${available.length > 0 ? available.join(', ') : 'default'}`);
-    process.exit(1);
+if (forPreset) {
+  preset = resolvePreset(presetsDir, forPreset);
+  if (preset) {
+    selectedSkills = preset.skills;
+    if (preset.status === 'experimental') {
+      console.warn(
+        `\n[experimental] The "${preset.name}" preset is marked experimental: it has not been\n` +
+        'validated against a real project. Skills, rules and config may change or be\n' +
+        'wrong. Report anything that misleads at\n' +
+        'https://github.com/hyperbolictonic/opencode-anti-slop/issues\n'
+      );
+    }
+    console.log(`Preset: ${preset.name} (${preset.status}) — ${preset.description}`);
   }
-  const manifest = JSON.parse(readFileSync(path.join(presetsDir, forPreset, 'manifest.json'), 'utf8'));
-  if (manifest.status === 'experimental') {
-    console.warn(
-      `\n[experimental] The "${forPreset}" preset is marked experimental: it has not been\n` +
-      'validated against a real project. Skills, rules and config may change or be\n' +
-      'wrong. Report anything that misleads at\n' +
-      'https://github.com/hyperbolictonic/opencode-anti-slop/issues\n'
-    );
-  }
-  if (Array.isArray(manifest.skills) && manifest.skills.length > 0) {
-    selectedSkills = new Set(manifest.skills);
-  }
-  if (manifest.config && typeof manifest.config === 'object') {
-    presetConfig = manifest.config;
-  }
-  console.log(`Preset: ${forPreset} (${manifest.status ?? 'unspecified'}) — ${manifest.description ?? ''}`);
 }
 
 const copyOverwrite = (src, dest) => {
@@ -153,6 +141,20 @@ if (selectedSkills) {
   for (const name of selectedSkills) {
     if (!existsSync(path.join(skillsDest, name, 'SKILL.md'))) {
       console.error(`[warn] preset listed skill "${name}" but the kit does not ship it — skipped.`);
+    }
+  }
+}
+
+// --- preset-local skills -------------------------------------------------------
+// A preset can ship its own skills in presets/<name>/skills/<skill>/SKILL.md.
+// They are installed in addition to the kit skills, after them, so a preset
+// skill may deliberately override a same-named kit skill. Namespacing preset
+// skills by framework (e.g. juce-audio-thread) is the documented convention.
+if (preset?.skillsDir && existsSync(preset.skillsDir)) {
+  console.log(`[preset] installing preset-local skills from ${path.relative(kitRoot, preset.skillsDir)}`);
+  for (const entry of readdirSync(preset.skillsDir, { withFileTypes: true })) {
+    if (entry.isDirectory() && existsSync(path.join(preset.skillsDir, entry.name, 'SKILL.md'))) {
+      copyOverwrite(path.join(preset.skillsDir, entry.name), path.join(skillsDest, entry.name));
     }
   }
 }
@@ -196,13 +198,9 @@ if (!existsSync(configDest)) {
     docs: { src: 'src', ignorePaths: [], ignoreExports: [] },
     imports: { deny: [] },
   };
-  const merged = presetConfig
-    ? Object.fromEntries(
-        Object.keys(base).map((k) => [k, { ...base[k], ...(presetConfig[k] ?? {}) }]),
-      )
-    : base;
-  if (presetConfig?.extensions || presetConfig?.scan?.extensions) {
-    merged.scan = { extensions: presetConfig.extensions ?? presetConfig.scan.extensions };
+  const merged = mergeStarterConfig(base, preset?.config ?? null);
+  if (preset?.extensions) {
+    merged.scan = { extensions: preset.extensions };
   }
   writeFileSync(configDest, `${JSON.stringify(merged, null, 2)}\n`);
   console.log(`[ok] ${configDest} (starter — tune ignore lists to your framework's declarative files)`);
