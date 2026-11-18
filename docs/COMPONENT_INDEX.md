@@ -2,11 +2,11 @@
 
 <!-- generated: run `node scripts/anti-slop/generate-component-index.mjs` to regenerate -->
 
-Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 10 files, 35 exports.
+Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 12 files, 44 exports.
 
 > Rule of use: before creating any new component, hook, or utility, check this file first (see the `reuse-before-create` skill). When you add a shared abstraction, rerun the generator and fill in the "When to use" column.
 
-## Modules (35)
+## Modules (44)
 
 | File | Export | When to use |
 |---|---|---|
@@ -17,6 +17,15 @@ Inventory of shared layouts, components, hooks, services, and utilities under `s
 | `anti-slop/baseline.mjs` | `compareSets` | Compare an identity set (e.g. cycle keys) against a baseline array. |
 | `anti-slop/baseline.mjs` | `baselineGate` | Shared ratchet flow for count-based gates (duplicates/docs/modularity). |
 | `anti-slop/baseline.mjs` | `BASELINE_FILE` | Default baseline path: gates auto-ratchet when this file exists at the repo root. |
+| `anti-slop/check-docs-links.mjs` | `repoMarkdownFiles` | Repo-relative .md files, excluding tooling and generated noise. |
+| `anti-slop/check-docs-links.mjs` | `githubSlug` | GitHub-style heading slug: lowercase, punctuation stripped (unicode-safe), |
+| `anti-slop/check-docs-links.mjs` | `headingSlugs` | Slug set for every markdown heading in the source (fenced lines excluded). |
+| `anti-slop/check-docs-links.mjs` | `extractLinks` | Markdown links in the source, with fenced blocks excluded. |
+| `anti-slop/check-docs-links.mjs` | `checkMarkdown` | Check one markdown file. Returns a list of problems: |
+| `anti-slop/check-encoding.mjs` | `isSuspectMojibake` | True when text carries the classic UTF-8-as-CP1252 mojibake signatures. |
+| `anti-slop/check-encoding.mjs` | `utf8ToCp1252String` | Simulate the PowerShell failure for tests: decode UTF-8 bytes as CP1252. |
+| `anti-slop/check-encoding.mjs` | `repairDoubleEncodedUtf8` | Reverse UTF-8-as-CP1252 double encoding. Returns the repaired text, or |
+| `anti-slop/check-encoding.mjs` | `hasUtf8Bom` | True when the decoded text starts with a UTF-8 BOM (U+FEFF). |
 | `anti-slop/check-imports.mjs` | `resolveSpecifier` | Resolve a relative specifier to a file inside `root`; null for packages/misses. |
 | `anti-slop/check-imports.mjs` | `buildImportGraph` | Build the internal import graph: relFile -> Set<relFile> (relative imports only). |
 | `anti-slop/check-imports.mjs` | `findCycles` | Find circular dependencies. Returns each cycle once, as a chain |
