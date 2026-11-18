@@ -482,6 +482,36 @@ npx github:hyperbolictonic/opencode-anti-slop --for <preset>
   `verify-clean-code`) can be selected as-is — your preset only adds the
   framework-specific vocabulary. See [presets/README.md](presets/README.md).
 
+### Installing and running a preset
+
+```sh
+# 1. install (preset skills + the base gates + config + CI template)
+npx opencode-anti-slop --for <preset> --hooks
+
+# 2. generate the inventory for the preset's language
+node scripts/anti-slop/generate-component-index.mjs
+
+# 3. run the gates and read their notices
+node scripts/anti-slop/check-duplicates.mjs
+node scripts/anti-slop/check-modularity.mjs
+node scripts/anti-slop/check-docs.mjs      # warns INERT on non-JS languages
+node scripts/anti-slop/check-imports.mjs   # warns INERT on non-JS languages
+```
+
+What a preset install changes on disk: the preset's skills (plus the
+framework-agnostic kit skills) land in `.opencode/skills/`, the gates land in
+`scripts/anti-slop/`, and the starter `anti-slop.config.json` carries the
+preset's `scan.extensions` — which retargets **every** gate at the preset's
+language. The gate output after step 3 tells you honestly what is enforcing
+and what is inert: the clone detector and (for brace languages) the
+modularity budgets are active; the docs/import gates print an explicit INERT
+warning on non-JS languages instead of passing silently.
+
+Everyday use is identical to the default install — agents follow the skills,
+pre-commit/pre-push enforce, `/audit-ui` sweeps. Updating a preset install is
+the same npx command with `--force`; removing it is deleting `.opencode/`,
+`scripts/anti-slop/`, the hooks, and the CI file.
+
 **Preset status:** every manifest carries `"status"`. `stable` presets are
 validated against real projects (currently: `default`). `experimental`
 presets print a prominent warning on install and have not been validated —

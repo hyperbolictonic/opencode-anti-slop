@@ -22,6 +22,33 @@ node install.mjs path/to/real-project --for <name> --force
 
 (`--for default` is the original React/Node kit; omit `--for` to get it.)
 
+## Running the preset
+
+After install, in the target repo:
+
+```sh
+node scripts/anti-slop/generate-component-index.mjs   # inventory for your language
+node scripts/anti-slop/check-duplicates.mjs           # works for nearly any language
+node scripts/anti-slop/check-modularity.mjs           # brace languages: C/C++/Java/C#/JS
+node scripts/anti-slop/check-docs.mjs                 # JS/TS only — prints INERT warning otherwise
+node scripts/anti-slop/check-imports.mjs              # JS/TS only — prints INERT warning otherwise
+```
+
+Read the output — it tells you honestly what is enforcing:
+
+- `scan.extensions` from the preset's manifest is in the target's
+  `anti-slop.config.json`, so every gate scanned your language without extra
+  flags.
+- Expected inert-gate warnings (docs/import on non-JS languages) are a
+  feature, not a failure: they are the gate saying "green here is not
+  enforcement". Disclose them in the manifest description.
+- Iterate with `--force` reinstall: change a skill in
+  `presets/<name>/skills/`, reinstall into the real project, and watch what
+  the agent does differently. A preset that never changes agent behavior
+  is not done.
+- Update an existing install with the same command + `--force`; uninstall by
+  deleting `.opencode/`, `scripts/anti-slop/`, the hooks and the CI file.
+
 ## Manifest reference
 
 ```json

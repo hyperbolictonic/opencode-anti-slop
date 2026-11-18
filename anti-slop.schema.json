@@ -37,6 +37,18 @@
         "ignoreExports": { "type": "array", "items": { "type": "string" }, "description": "export names that are framework configuration, not shared surface (Next.js segment config is auto-defaulted when next.config.* exists)" }
       }
     },
+    "scan": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Framework presets write this section: it retargets every gate at the preset's language.",
+      "properties": {
+        "extensions": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\.[A-Za-z0-9]+$" },
+          "description": "File extensions every gate scans, e.g. [\".cpp\", \".h\"] for JUCE. Clone detection is near-universal; the modularity brace-matcher works for C-family; the docs/import gates parse JS/TS only and print a warning when they are inert."
+        }
+      }
+    },
     "imports": {
       "type": "object",
       "additionalProperties": false,

@@ -184,7 +184,7 @@ export function applyIgnorePaths(files, globs, { label = 'ignorePaths', src } = 
   return kept;
 }
 
-const KNOWN_SECTIONS = new Set(['duplicates', 'modularity', 'docs', 'imports', '$schema', '_comment']);
+const KNOWN_SECTIONS = new Set(['duplicates', 'modularity', 'docs', 'imports', 'scan', '$schema', '_comment']);
 
 /** Light validation: unknown keys and wrong types warn instead of silently
  * disabling the tuning (a typo like "duplicate" would otherwise run the gates
@@ -216,6 +216,7 @@ function validateConfig(parsed) {
   arr('modularity', 'ignorePaths');
   arr('docs', 'ignorePaths');
   arr('docs', 'ignoreExports');
+  arr('scan', 'extensions');
   if (parsed.imports?.deny !== undefined && !Array.isArray(parsed.imports.deny)) {
     warns.push('imports.deny must be an array of { from, forbid } rules');
   }
