@@ -2,11 +2,11 @@
 
 <!-- generated: run `node scripts/anti-slop/generate-component-index.mjs` to regenerate -->
 
-Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 10 files, 34 exports.
+Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 10 files, 35 exports.
 
 > Rule of use: before creating any new component, hook, or utility, check this file first (see the `reuse-before-create` skill). When you add a shared abstraction, rerun the generator and fill in the "When to use" column.
 
-## Modules (34)
+## Modules (35)
 
 | File | Export | When to use |
 |---|---|---|
@@ -22,6 +22,7 @@ Inventory of shared layouts, components, hooks, services, and utilities under `s
 | `anti-slop/check-imports.mjs` | `findCycles` | Find circular dependencies. Returns each cycle once, as a chain |
 | `anti-slop/cli.mjs` | `parseFlags` | Parse CLI flags uniformly across gate scripts. |
 | `anti-slop/cli.mjs` | `bootstrapGate` | Common gate bootstrap: handle -h/--help with `usage`, parse flags per `spec`, |
+| `anti-slop/cli.mjs` | `scanExtensions` | The scan extension set for a gate run: `config.scan.extensions` (a preset |
 | `anti-slop/cli.mjs` | `collectPathFiles` | Resolve explicit path arguments (files or directories) into { full, rel } |
 | `anti-slop/cli.mjs` | `resolveScanTarget` | Resolve the scan root given to a gate (--src): accepts a directory (walked) |
 | `anti-slop/cli.mjs` | `gateArgs` | bootstrapGate plus the standard positional validation most gates share. |
