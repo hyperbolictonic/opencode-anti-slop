@@ -361,6 +361,14 @@ Framework presets adapt the kit to other stacks — see
 reference, per-gate language applicability, and the experimental→stable
 promotion bar.
 
+## Contributing
+
+Bug reports, PRs, and framework presets are welcome — see
+[CONTRIBUTING.md](CONTRIBUTING.md). Preset PRs are validated automatically by
+CI (manifest shape, skill existence, inert-gate disclosure) and land as
+`experimental` by design; promotion to `stable` is a later PR showing the
+preset survived a real project.
+
 ## Reusable vs. project-specific
 
 The skills are project-agnostic: they direct the agent to discover each repo's
