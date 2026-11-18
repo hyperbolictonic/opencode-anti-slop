@@ -250,7 +250,7 @@ docs/import gates are JS-only and say so when they are inert. See
 [presets/README.md](presets/README.md) for what a language preset can and
 cannot claim.
 
-## Scope, requirements and limitations
+## What's inside
 
 ```
 .opencode/skills/
