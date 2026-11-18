@@ -301,7 +301,9 @@ scripts/anti-slop/
   check-docs.mjs                Docs gate: fails when exports lack a one-line
                                 "When to use" JSDoc. Per-file mode for hooks.
   check-encoding.mjs            Encoding guard: fails on double-encoded UTF-8
-                                (PowerShell round-trip mojibake) and BOMs.
+                                (PowerShell round-trip mojibake), BOMs, and
+                                corruption that is still valid UTF-8 —
+                                control pictures, LRM/RLM marks, U+FFFD.
   run-project-checks.mjs        Pre-push project checks: lockfile-based
                                 package-manager detection, tsc --noEmit
                                 fallback, skips printed not hidden.

@@ -2,11 +2,11 @@
 
 <!-- generated: run `node scripts/anti-slop/generate-component-index.mjs` to regenerate -->
 
-Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 12 files, 44 exports.
+Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 12 files, 45 exports.
 
 > Rule of use: before creating any new component, hook, or utility, check this file first (see the `reuse-before-create` skill). When you add a shared abstraction, rerun the generator and fill in the "When to use" column.
 
-## Modules (44)
+## Modules (45)
 
 | File | Export | When to use |
 |---|---|---|
@@ -23,6 +23,7 @@ Inventory of shared layouts, components, hooks, services, and utilities under `s
 | `anti-slop/check-docs-links.mjs` | `extractLinks` | Markdown links in the source, with fenced blocks excluded. |
 | `anti-slop/check-docs-links.mjs` | `checkMarkdown` | Check one markdown file. Returns a list of problems: |
 | `anti-slop/check-encoding.mjs` | `isSuspectMojibake` | True when text carries the classic UTF-8-as-CP1252 mojibake signatures. |
+| `anti-slop/check-encoding.mjs` | `hasCorruptionMarkers` | True when text carries corruption that is still valid UTF-8: control |
 | `anti-slop/check-encoding.mjs` | `utf8ToCp1252String` | Simulate the PowerShell failure for tests: decode UTF-8 bytes as CP1252. |
 | `anti-slop/check-encoding.mjs` | `repairDoubleEncodedUtf8` | Reverse UTF-8-as-CP1252 double encoding. Returns the repaired text, or |
 | `anti-slop/check-encoding.mjs` | `hasUtf8Bom` | True when the decoded text starts with a UTF-8 BOM (U+FEFF). |

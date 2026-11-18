@@ -30,6 +30,15 @@ it is not itself an app. See `README.md` for the full picture and install flow.
   `[System.IO.File]::WriteAllText(..., [Text.UTF8Encoding]::new($false))`.
   `check-encoding.mjs` fails CI on mojibake and BOMs (found in cli.mjs,
   generate-component-index.mjs and presets/README.md this way).
+- **CP1252 table warning:** the encoding gate's table must keep the five
+  undefined Windows-1252 slots (0x81, 0x8D, 0x8F, 0x90, 0x9D) as `null`.
+  A compacted table shifts every mapping above each gap, so a "repair"
+  silently turns box-drawing characters (`├──`) into control pictures
+  (U+2418 U+2400 U+2400) and em-dashes into U+2010 hyphens — still valid
+  UTF-8. `check-encoding.mjs` catches the control-picture and LRM/RLM debris,
+  but a file that only contained dashes leaves plausible-looking U+2010
+  hyphens behind, so never trust a repair that "looks right": verify against
+  the last clean commit (`git show <commit>:<file>`).
 - **`install.mjs`**: copies skills + scripts into a target repo; per-repo tuning
   belongs in the target repo's `AGENTS.md`, not in these files. Framework
   presets live in `presets/<name>/manifest.json` (pure data: skills list,
