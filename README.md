@@ -308,8 +308,9 @@ scripts/anti-slop/
                                 package-manager detection, tsc --noEmit
                                 fallback, skips printed not hidden.
   install-hooks.mjs             Installs pre-commit (staged files: modularity +
-                                docs, blocking) and pre-push (duplicate +
-                                import gates + project checks) git hooks.
+                                docs, blocking) and pre-push (duplicate, import,
+                                encoding + docs-link gates, project checks)
+                                git hooks.
 
 presets/                        Framework presets: <name>/manifest.json +
                                 optional preset-local skills. See

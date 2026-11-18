@@ -17,8 +17,7 @@ jobs:
           node-version: ${{ matrix.node }}
       - run: npm test
       # The kit enforces itself: its own gates must pass on its own source.
-      - run: node scripts/anti-slop/check-modularity.mjs --src scripts/anti-slop
-      - run: node scripts/anti-slop/check-imports.mjs --src scripts
-      - run: node scripts/anti-slop/check-docs.mjs --src scripts/anti-slop
-      - run: node scripts/anti-slop/check-duplicates.mjs --src scripts
+      # `npm run gates` is the single source of truth, so a gate added there is
+      # never silently absent from CI (encoding and docs-links were, once).
+      - run: npm run gates
       - run: node scripts/anti-slop/generate-component-index.mjs --src scripts --check

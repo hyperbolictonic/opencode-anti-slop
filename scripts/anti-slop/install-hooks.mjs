@@ -5,8 +5,9 @@
  *   pre-commit : checks ONLY staged JS/TS files with check-modularity
  *                (blocking) + reports duplicates (non-blocking). Fast, and
  *                never blocked by legacy code.
- *   pre-push   : full duplicates gate (blocking) + lint/typecheck/test via
- *                `npm run <script> --if-present`.
+ *   pre-push   : full duplicates + imports + encoding + docs-link gates
+ *                (blocking) + lint/typecheck/test via `npm run <script>
+ *                --if-present`.
  *
  * Run from the target repo root:  node scripts/anti-slop/install-hooks.mjs [--force]
  * Existing hooks are never overwritten without --force.
@@ -65,6 +66,12 @@ node scripts/anti-slop/check-duplicates.mjs || exit 1
 
 echo "[anti-slop] import-boundary gate..."
 node scripts/anti-slop/check-imports.mjs || exit 1
+
+echo "[anti-slop] encoding gate (mojibake / BOM / corrupt markers)..."
+node scripts/anti-slop/check-encoding.mjs || exit 1
+
+echo "[anti-slop] docs link gate (broken links, anchors, local-disk references)..."
+node scripts/anti-slop/check-docs-links.mjs || exit 1
 
 echo "[anti-slop] project checks (lint/typecheck/test; skips are printed, not hidden)..."
 node scripts/anti-slop/run-project-checks.mjs || exit 1
