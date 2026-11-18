@@ -101,6 +101,13 @@ const decision = baselineGate({
 if (decision === 'ok') process.exit(0);
 if (decision === 'fail') process.exit(args.reportOnly ? 0 : 1);
 
+if (files.length === 0 && positionals.length > 0) {
+  console.log(
+    `[note] ${positionals.length} path(s) given, but none are checkable - test files, ` +
+    'generated files and ignorePaths are excluded. Nothing was enforced by this run.',
+  );
+}
+
 if (missing === 0) {
   console.log(`[ok] Docs check passed (${files.length} file(s), every export documented).`);
   process.exit(0);

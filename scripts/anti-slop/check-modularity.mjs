@@ -185,6 +185,13 @@ for (const file of files) {
   perFileKinds[file.rel] = kinds;
 }
 
+if (files.length === 0 && positionals.length > 0) {
+  console.log(
+    `[note] ${positionals.length} path(s) given, but none are checkable - test files, ` +
+    'generated files and ignorePaths are excluded. Nothing was enforced by this run.',
+  );
+}
+
 if (violations === 0) {
   console.log(`[ok] Modularity check passed (${files.length} files within budgets).`);
   process.exit(0);
