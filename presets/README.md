@@ -58,6 +58,43 @@ lives: architecture rules, framework-specific anti-patterns, the gotchas that
 only make sense in your stack. Keep each skill under ~150 lines and concrete
 — the same bar the kit's own skills meet.
 
+## Use the kit's own skills as your template
+
+Do not start from a blank page. Every kit skill is a worked example of the
+format, tone and enforcement style your preset skills should meet — same
+directory, same frontmatter, same sections:
+
+- [reuse-before-create](../../.opencode/skills/reuse-before-create/SKILL.md) —
+  copy this structure for any pre-flight/workflow skill: numbered mandatory
+  steps, an **output contract** the agent must state before writing code, and
+  an anti-patterns section naming the failure modes with the reason each is
+  wrong.
+- [react-state-and-effects](../../.opencode/skills/react-state-and-effects/SKILL.md) —
+  the decision-rule style: strict bans, narrow allowed uses, numeric
+  thresholds, and the *why* behind each rule in one line.
+- [abstraction-review](../../.opencode/skills/abstraction-review/SKILL.md) —
+  the review/report style: how to make the agent produce a ranked, costed
+  report instead of acting on its own ("never auto-extracts" is part of the
+  contract).
+- Every skill's `description` frontmatter **is the trigger** — study how each
+  kit skill phrases when it loads ("Trigger when...", "Trigger BEFORE...").
+  A vague description means your skill never loads when it matters.
+
+What meets the bar:
+
+- Rules that are checkable or decidable ("never", "only when", thresholds) —
+  not aspirations.
+- Named anti-patterns with the reason each is wrong.
+- ~150 lines, zero filler.
+
+And your preset does not need to rewrite what the kit already covers:
+`reuse-before-create`, `modular-architecture`, `abstraction-review` and
+`verify-clean-code` are framework-agnostic — select them in your manifest's
+`skills` list and write **only** the framework-specific skills (for JUCE:
+processor/editor separation, no allocations or blocking on the audio thread,
+`juce::ignoreUnused` discipline). The default preset's manifest is a worked
+example of that selection.
+
 ## Gate applicability by language — read before writing a preset
 
 The gates are JS/TS-first and are **not equally strong for every language**:

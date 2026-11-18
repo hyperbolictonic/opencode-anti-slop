@@ -27,6 +27,25 @@ the skills use the standard Agent Skills format, so they also work with Claude
 Code by copying them into `.claude/skills/`. The scripts and git hooks are
 agent-agnostic.
 
+## Contents
+
+- [Quick start](#quick-start)
+- [The problem](#the-problem)
+- [What it catches](#what-it-catches)
+- [What a session looks like](#what-a-session-looks-like)
+- [What's inside](#whats-inside)
+- [How enforcement works](#how-enforcement-works)
+- [The component index](#the-component-index)
+- [Tuning per repo](#tuning-per-repo-anti-slopconfigjson)
+- [Baseline mode](#adopting-a-repo-with-legacy-debt-baseline-mode)
+- [What counts as duplication](#what-counts-as-duplication--and-what-doesnt)
+- [Proven on a real codebase](#proven-on-a-real-codebase)
+- [Tests and self-enforcement](#tests-and-self-enforcement)
+- [FAQ](#faq)
+- [Scope and limitations](#scope-requirements-and-limitations)
+- [Framework presets](#framework-presets-experimental-mechanism)
+- [Contributing](#contributing)
+
 ## Quick start
 
 One command — installs skills, the `/audit-ui` command, gate scripts, the CI
@@ -60,6 +79,17 @@ repo — no registration needed. They are advertised to the model by their
 `description` and load on demand via the `skill` tool. The `/audit-ui` command
 arrives with the kit and produces a prioritized refactor plan from the same
 deterministic checks.
+
+## Documentation
+
+| Doc | What it is |
+|---|---|
+| [presets/README.md](presets/README.md) | **Preset author guide** — manifest reference, preset-local skills, per-gate language applicability, the experimental→stable promotion bar |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | PR flow, the preset PR checklist, review criteria |
+| [docs/COMPONENT_INDEX.md](docs/COMPONENT_INDEX.md) | The kit's **own generated component index** — a live example of the artifact your repo will get |
+| [anti-slop.schema.json](anti-slop.schema.json) | JSON schema for `anti-slop.config.json` — point `$schema` at it for editor autocomplete |
+| [.opencode/skills/](.opencode/skills/) | Each skill's full rules live in its `SKILL.md` — the tree below only summarizes |
+| [AGENTS.md](AGENTS.md) | Conventions for working on the kit itself |
 
 ## The problem
 
@@ -102,7 +132,125 @@ src/lib/monolith.ts (321 lines):
 Every failure message names the fix and the skill that owns it. Gate thresholds
 are per-repo tunable; weakening the check to pass it is the one forbidden fix.
 
-## What's inside
+## What a session looks like
+
+You ask for a feature: *"add a booking history page for clients."* With the
+kit installed, the agent does this:
+
+**1. Pre-flight (auto-triggered skill).** Before writing anything, the agent
+loads `reuse-before-create`, reads `docs/COMPONENT_INDEX.md`, greps the tree,
+and checks `package.json` — by concept, not just by name.
+
+**2. Reuse Plan, stated before code:**
+
+```text
+Reuse Plan:
+1. Reusing:    layouts/TwoColumnLayout.tsx (sidebar slot for the filters)
+2. Reusing:    lib/client-data.ts — getBookingsForClient
+3. Extending:  components/carer/ClientFilters.tsx via a new `range` variant prop
+4. New:        components/carer/BookingHistoryTable.tsx (colocated; promoted to
+               shared only when the portal needs it)
+```
+
+No new files beyond what the plan declares. "Nothing new" in the plan and new
+files in the diff is defined as a bug in the plan.
+
+**3. Composition rules apply.** The page composes the shared layout with
+slots; the table component stays presentational; fetching lives in the
+container. If the page re-implemented a layout that exists, the
+`layout-composition` skill's rules apply.
+
+**4. End-of-task gate.** The agent runs typecheck, lint, targeted tests, then
+the deterministic gates, then regenerates the index if it added shared
+exports.
+
+**5. Commit and push.** The pre-commit hook checks the staged files; the
+pre-push hook runs the full gates plus the project's lint/typecheck/test.
+
+**6. Periodic deep sweep.** `/audit-ui` runs all the checks at high
+sensitivity and returns a ranked refactor plan — duplication clusters,
+monoliths to split, layout rewrites waiting to happen, undocumented exports.
+
+If the agent skips the pre-flight anyway, the gates catch it at commit — the
+layers are independent on purpose.
+
+## The component index
+
+`docs/COMPONENT_INDEX.md` is the kit's central artifact: a generated inventory
+of every shared export, which the reuse pre-flight is grounded in.
+
+```markdown
+## Components (47)
+
+| File | Export | When to use |
+|---|---|---|
+| `components/ui/AppContainer.tsx` | `AppContainer` | Standard width/padding wrapper for every screen |
+| `components/ui/PageHeader.tsx` | `PageHeader` | Page title with optional back link and subtitle |
+```
+
+- The **"When to use" column comes from the JSDoc** above each export —
+  documentation and inventory are the same act, and the docs gate blocks
+  commits with undocumented shared exports.
+- Agents read this before creating anything; a stale index causes
+  duplication, so CI asserts freshness (`--check`) and the docs gate can't
+  pass with a stale entry.
+- Regeneration is one command; a `## Manual Notes` section survives it.
+
+## Proven on a real codebase
+
+The kit's first adoption was a production **Next.js 16 + Payload 3
+care-records system** (~90 source files, SQLite, 78 integration tests).
+Measured results at the shipped thresholds:
+
+| Metric | Before | After |
+|---|---|---|
+| Logic-level duplication (min-tokens 50) | 17.4% | **0.0%** |
+| Undocumented shared exports | 89 | **0** |
+| Oversized page components (one was a 257-line function) | 4 | **0** |
+
+The gates also drove real refactors, not just deletions: tag-in/tag-out
+server actions merged into one access-checked path, a load-bearing DBS
+evidence rule moved out of a UI component into `src/lib/`, five page
+preambles collapsed into one `getClientPageContext()` — and the
+kit's own agent found a bug in the kit itself (a regex attaching the wrong
+JSDoc to every export). Everything above was verified by the project's
+78 integration tests plus e2e.
+
+## FAQ
+
+**Do I need OpenCode?** No. The scripts, git hooks, CI template and schema
+work in any repo with any (or no) AI agent. The skills need OpenCode
+natively, or Claude Code by copying them to `.claude/skills/`.
+
+**Monorepos?** Point each package's config at its own `src` (`"src":
+"packages/app/src"`), and put an `AGENTS.md` in the package — OpenCode
+discovers skills and configs at every level.
+
+**Does it slow down commits?** Pre-commit checks only the staged files
+(modularity + docs) — typically a second or two. The full-tree duplicate and
+import gates run at pre-push and CI. Skips are printed, never hidden.
+
+**Can I adopt without cleaning existing debt first?** Yes — that's what
+[baseline mode](#adopting-a-repo-with-legacy-debt-baseline-mode) is for:
+snapshot today's debt, gates fail only on new violations, shrink the
+baseline as you clean up.
+
+**What if the agent ignores the skills?** Skills are prompt-level and
+auto-load by trigger description, but they are not a guarantee — that's why
+the layers are independent. The hooks and CI fail on violations regardless
+of what the model did.
+
+**Can I use just the gates?** Yes. Delete `.opencode/` after installing and
+keep `scripts/anti-slop/`, the hooks and the config — everything still works
+agent-free.
+
+**My framework isn't React or Node?** The clone detector and (for brace
+languages) the modularity gate work on other languages today; the
+docs/import gates are JS-only and say so when they are inert. See
+[presets/README.md](presets/README.md) for what a language preset can and
+cannot claim.
+
+## Scope, requirements and limitations
 
 ```
 .opencode/skills/
@@ -328,6 +476,11 @@ npx github:hyperbolictonic/opencode-anti-slop --for <preset>
 - `default` is the original React/Node kit — everything above.
 - New presets are added as a directory + manifest; no forks, no branches, no
   separate packages.
+- **You are not starting from zero**: the kit's own skills double as worked
+  examples of the format, and framework-agnostic skills
+  (`reuse-before-create`, `modular-architecture`, `abstraction-review`,
+  `verify-clean-code`) can be selected as-is — your preset only adds the
+  framework-specific vocabulary. See [presets/README.md](presets/README.md).
 
 **Preset status:** every manifest carries `"status"`. `stable` presets are
 validated against real projects (currently: `default`). `experimental`
