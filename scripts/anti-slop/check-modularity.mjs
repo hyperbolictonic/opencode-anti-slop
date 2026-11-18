@@ -28,6 +28,7 @@ import {
 } from './lib.mjs';
 import {
   loadConfig, gateArgs, collectPathFiles, resolveScanTarget, applyIgnorePaths,
+  scanExtensions,
 } from './cli.mjs';
 import { baselineGate } from './baseline.mjs';
 
@@ -156,7 +157,7 @@ function analyze(source, limits) {
 // budgets, matching the drift principle (shape, not logic).
 const modIgnore = Array.isArray(cfgMod.ignorePaths) ? cfgMod.ignorePaths : [];
 const files = applyIgnorePaths(
-  positionals.length > 0 ? collectPathFiles(positionals) : resolveScanTarget(args.src),
+  positionals.length > 0 ? collectPathFiles(positionals, { extensions: scanExtensions(loadConfig()) }) : resolveScanTarget(args.src, { extensions: scanExtensions(loadConfig()) }),
   modIgnore,
   { label: 'modularity.ignorePaths', src: args.src },
 );

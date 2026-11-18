@@ -25,7 +25,7 @@ import {
   stripNoise, tokenize,
 } from './lib.mjs';
 import {
-  loadConfig, matchesAnyGlob, gateArgs, resolveScanTarget,
+  loadConfig, matchesAnyGlob, gateArgs, resolveScanTarget, scanExtensions,
 } from './cli.mjs';
 import { baselineGate } from './baseline.mjs';
 
@@ -52,7 +52,10 @@ if (args.minTokens < 10) {
 const IGNORE_GLOBS = Array.isArray(cfgDups.ignore) ? cfgDups.ignore : [];
 
 // --- detect -------------------------------------------------------------------
-const allFiles = resolveScanTarget(args.src, args.includeTests);
+const allFiles = resolveScanTarget(args.src, {
+  includeTests: args.includeTests,
+  extensions: scanExtensions(loadConfig()),
+});
 const files = allFiles.filter((f) => !matchesAnyGlob(f.rel, IGNORE_GLOBS));
 const excludedCount = allFiles.length - files.length;
 if (IGNORE_GLOBS.length > 0) {

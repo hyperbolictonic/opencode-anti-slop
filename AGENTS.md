@@ -21,7 +21,12 @@ it is not itself an app. See `README.md` for the full picture and install flow.
   tools in the gates (verified: jscpd via npx scans 0 files on some Windows
   setups).
 - **`install.mjs`**: copies skills + scripts into a target repo; per-repo tuning
-  belongs in the target repo's `AGENTS.md`, not in these files.
+  belongs in the target repo's `AGENTS.md`, not in these files. Framework
+  presets live in `presets/<name>/manifest.json` (pure data: skills list,
+  scan extensions, starter config) and are selected with `--for <preset>`.
+  Presets carry a `status` field — `stable` requires validation against a real
+  project; `experimental` presets warn on install and may be wrong. The kit
+  repo never installs into itself (guarded).
 
 ## Working in this repo
 

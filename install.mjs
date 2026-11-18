@@ -6,9 +6,15 @@
  *   npx github:hyperbolictonic/opencode-anti-slop          # install into cwd
  *   npx github:hyperbolictonic/opencode-anti-slop ./app    # explicit target
  *   npx github:hyperbolictonic/opencode-anti-slop --hooks  # + git hooks
+ *   npx github:hyperbolictonic/opencode-anti-slop --for <preset>
+ *
+ * Presets (presets/<name>/manifest.json) select which skills are installed,
+ * the scanned file extensions, and the starter config. "default" is the
+ * original React/Node kit; presets with "status": "experimental" print a
+ * warning and have not been validated against real projects.
  *
  * Copies:
- *   .opencode/skills/<skills>            -> <target>/.opencode/skills/
+ *   .opencode/skills/<selected skills>   -> <target>/.opencode/skills/
  *   .opencode/commands/audit-ui.md       -> <target>/.opencode/commands/
  *   scripts/anti-slop/*.mjs              -> <target>/scripts/anti-slop/
  *   templates/anti-slop-ci.yml           -> <target>/.github/workflows/
@@ -19,42 +25,108 @@
  * target is a git repo.
  *
  * Usage:
- *   npx opencode-anti-slop [target-dir] [--force] [--hooks]
- *   node install.mjs [target-repo-dir] [--force] [--hooks]
+ *   npx opencode-anti-slop [target-dir] [--for <preset>] [--force] [--hooks]
+ *   node install.mjs [target-repo-dir] [--for <preset>] [--force] [--hooks]
  */
 
-import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const kitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
-const argv = process.argv.slice(2);
-const flags = new Set(argv.filter((a) => a.startsWith('--')));
-const force = flags.has('--force');
-const wantHooks = flags.has('--hooks');
-const targetArg = argv.find((a) => !a.startsWith('--'));
-const helpRequested = flags.has('-h') || flags.has('--help');
+const presetsDir = path.join(kitRoot, 'presets');
 
-if (helpRequested) {
-  const help = [
-    'Usage: npx github:hyperbolictonic/opencode-anti-slop [target-dir] [--force] [--hooks]',
-    '',
-    '  target-dir  defaults to the current directory',
-    '  --force     overwrite kit files that already exist in the target',
-    '  --hooks     also install the git pre-commit gate (requires .git)',
-  ].join('\n');
-  console.log(help);
-  process.exit(0);
+function availablePresets() {
+  if (!existsSync(presetsDir)) return [];
+  return readdirSync(presetsDir, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && existsSync(path.join(presetsDir, e.name, 'manifest.json')))
+    .map((e) => e.name);
 }
 
+function printHelp() {
+  console.log([
+    'Usage: npx github:hyperbolictonic/opencode-anti-slop [target-dir] [--for <preset>] [--force] [--hooks]',
+    '',
+    '  target-dir  defaults to the current directory',
+    `  --for       install a framework preset (available: ${['default', ...availablePresets()].filter((v, i, a) => a.indexOf(v) === i).join(', ')})`,
+    '  --force     overwrite kit files that already exist in the target',
+    '  --hooks     also install the git pre-commit gate (requires .git)',
+  ].join('\n'));
+}
+
+function fail(msg) {
+  console.error(msg);
+  printHelp();
+  process.exit(1);
+}
+
+// --- argument parsing ---------------------------------------------------------
+const kitTarget = path.resolve(kitRoot);
+const argv = process.argv.slice(2);
+const flags = new Set();
+let forPreset = null;
+let targetArg = null;
+
+for (let i = 0; i < argv.length; i++) {
+  const a = argv[i];
+  if (a === '--for') {
+    forPreset = argv[++i];
+    if (!forPreset || forPreset.startsWith('--')) {
+      fail('--for requires a preset name.');
+    }
+  } else if (a === '--force' || a === '--hooks') {
+    flags.add(a);
+  } else if (a === '-h' || a === '--help') {
+    printHelp();
+    process.exit(0);
+  } else if (a.startsWith('--')) {
+    fail(`Unknown option: ${a}`);
+  } else if (targetArg === null) {
+    targetArg = a;
+  } else {
+    fail(`Unexpected extra argument: ${a}`);
+  }
+}
+
+const force = flags.has('--force');
+const wantHooks = flags.has('--hooks');
 const target = path.resolve(targetArg ?? process.cwd());
+
 if (!existsSync(target) || !statSync(target).isDirectory()) {
   console.error(`Target directory not found: ${target}`);
   process.exit(1);
 }
-if (path.resolve(kitRoot) === target) {
-  console.error('Refusing to install the kit into itself.');
+if (kitTarget === target) {
+  console.error('Refusing to install the kit into itself. Pass a target directory.');
   process.exit(1);
+}
+
+// --- preset selection ---------------------------------------------------------
+let selectedSkills = null; // null = every skill in the kit
+let presetConfig = null;
+
+if (forPreset && forPreset !== 'default') {
+  const available = availablePresets();
+  if (!available.includes(forPreset)) {
+    console.error(`Unknown preset "${forPreset}". Available: ${available.length > 0 ? available.join(', ') : 'default'}`);
+    process.exit(1);
+  }
+  const manifest = JSON.parse(readFileSync(path.join(presetsDir, forPreset, 'manifest.json'), 'utf8'));
+  if (manifest.status === 'experimental') {
+    console.warn(
+      `\n[experimental] The "${forPreset}" preset is marked experimental: it has not been\n` +
+      'validated against a real project. Skills, rules and config may change or be\n' +
+      'wrong. Report anything that misleads at\n' +
+      'https://github.com/hyperbolictonic/opencode-anti-slop/issues\n'
+    );
+  }
+  if (Array.isArray(manifest.skills) && manifest.skills.length > 0) {
+    selectedSkills = new Set(manifest.skills);
+  }
+  if (manifest.config && typeof manifest.config === 'object') {
+    presetConfig = manifest.config;
+  }
+  console.log(`Preset: ${forPreset} (${manifest.status ?? 'unspecified'}) — ${manifest.description ?? ''}`);
 }
 
 const copyOverwrite = (src, dest) => {
@@ -73,8 +145,15 @@ const skillsDest = path.join(target, '.opencode', 'skills');
 mkdirSync(skillsDest, { recursive: true });
 
 for (const entry of readdirSync(skillsSrc, { withFileTypes: true })) {
-  if (entry.isDirectory() && existsSync(path.join(skillsSrc, entry.name, 'SKILL.md'))) {
-    copyOverwrite(path.join(skillsSrc, entry.name), path.join(skillsDest, entry.name));
+  if (!entry.isDirectory() || !existsSync(path.join(skillsSrc, entry.name, 'SKILL.md'))) continue;
+  if (selectedSkills && !selectedSkills.has(entry.name)) continue;
+  copyOverwrite(path.join(skillsSrc, entry.name), path.join(skillsDest, entry.name));
+}
+if (selectedSkills) {
+  for (const name of selectedSkills) {
+    if (!existsSync(path.join(skillsDest, name, 'SKILL.md'))) {
+      console.error(`[warn] preset listed skill "${name}" but the kit does not ship it — skipped.`);
+    }
   }
 }
 
@@ -106,17 +185,26 @@ for (const entry of readdirSync(commandsSrc, { withFileTypes: true })) {
 
 // --- starter config -----------------------------------------------------------
 // Scaffold anti-slop.config.json when the target has none, so the tuning
-// surface exists from day one. JSON has no comments; the reasoning for the
-// starter rules is printed in the manual steps below.
+// surface exists from day one. A preset's manifest config takes precedence
+// per section; JSON has no comments, so the reasoning for starter rules is
+// printed in the manual steps below.
 const configDest = path.join(target, 'anti-slop.config.json');
 if (!existsSync(configDest)) {
-  const starter = {
+  const base = {
     duplicates: { src: 'src', minTokens: 50, threshold: 3, ignore: [] },
     modularity: { src: 'src', maxFileLines: 300, maxFunctionLines: 80, maxClassMethods: 10 },
     docs: { src: 'src', ignorePaths: [], ignoreExports: [] },
     imports: { deny: [] },
   };
-  writeFileSync(configDest, `${JSON.stringify(starter, null, 2)}\n`);
+  const merged = presetConfig
+    ? Object.fromEntries(
+        Object.keys(base).map((k) => [k, { ...base[k], ...(presetConfig[k] ?? {}) }]),
+      )
+    : base;
+  if (presetConfig?.extensions || presetConfig?.scan?.extensions) {
+    merged.scan = { extensions: presetConfig.extensions ?? presetConfig.scan.extensions };
+  }
+  writeFileSync(configDest, `${JSON.stringify(merged, null, 2)}\n`);
   console.log(`[ok] ${configDest} (starter — tune ignore lists to your framework's declarative files)`);
 }
 

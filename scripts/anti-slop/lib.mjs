@@ -37,8 +37,11 @@ export const TEST_FILE = /(\.test|\.spec)\.[mc]?[tj]sx?$/;
  * identical across operating systems and filesystems — required for
  * generate-component-index --check to pass on a different OS than the one
  * that generated the index.
- * `includeTests` opts in to test and spec files (default: excluded). */
-export function walk(dir, base, includeTests = false) {
+ * `opts.includeTests` opts in to test and spec files (default: excluded).
+ * `opts.extensions` overrides the scanned extension set (preset support). */
+export function walk(dir, base, opts = {}) {
+  const { includeTests = false, extensions } = opts;
+  const exts = extensions ? new Set(extensions) : SOURCE_EXT;
   const files = [];
   const entries = [...readdirSync(dir, { withFileTypes: true })]
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
@@ -50,8 +53,8 @@ export function walk(dir, base, includeTests = false) {
     // Test/spec files: included only on opt-in. .stories/.d and other
     // IGNORE_FILE matches stay excluded in every mode.
     const include = isTest ? includeTests : !IGNORE_FILE.test(entry.name);
-    if (entry.isDirectory()) files.push(...walk(full, base, includeTests));
-    else if (SOURCE_EXT.has(path.extname(entry.name)) && !isGenerated(rel) && include) {
+    if (entry.isDirectory()) files.push(...walk(full, base, opts));
+    else if (exts.has(path.extname(entry.name)) && !isGenerated(rel) && include) {
       files.push({ full, rel });
     }
   }

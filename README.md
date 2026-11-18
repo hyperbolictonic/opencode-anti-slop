@@ -306,6 +306,47 @@ CI runs the tests and the self-gates on Node 20/22/24.
   OpenCode, copyable to `.claude/skills/` for Claude Code. The scripts and
   hooks work with any agent plus git. `/audit-ui` is OpenCode-specific.
 
+## Framework presets (experimental mechanism)
+
+Presets adapt the kit to other frameworks and stacks. A preset lives in
+`presets/<name>/manifest.json` and is pure data: which skills to install, the
+scanned file extensions, and a starter config. The installer selects one:
+
+```sh
+npx github:hyperbolictonic/opencode-anti-slop --for <preset>
+```
+
+- `default` is the original React/Node kit — everything above.
+- New presets are added as a directory + manifest; no forks, no branches, no
+  separate packages.
+
+**Preset status:** every manifest carries `"status"`. `stable` presets are
+validated against real projects (currently: `default`). `experimental`
+presets print a prominent warning on install and have not been validated —
+their skills, rules and config may change or be wrong. An experimental preset
+is promoted to `stable` only after it has survived a real codebase, the same
+bar `default` met. Building a preset without a real codebase to test it
+against tends to produce fiction.
+
+Manifest shape:
+
+```json
+{
+  "name": "example",
+  "status": "experimental",
+  "description": "What this preset is for",
+  "skills": ["reuse-before-create", "modular-architecture"],
+  "extensions": [".py"],
+  "config": { "modularity": { "maxFileLines": 400 } }
+}
+```
+
+`extensions` flows into the target's starter config as `scan.extensions`,
+which every gate honours. Note that gate coverage is language-bound: the
+clone detector is near-universal, the modularity brace-matcher works for
+C-family languages, and the import/docs gates are JS-specific — a preset can
+only be as strong as the gates its language supports.
+
 ## Reusable vs. project-specific
 
 The skills are project-agnostic: they direct the agent to discover each repo's

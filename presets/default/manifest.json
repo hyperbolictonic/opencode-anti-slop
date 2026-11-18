@@ -1,0 +1,21 @@
+{
+  "name": "default",
+  "status": "stable",
+  "description": "React + Node (any JS/TS codebase). The original, battle-tested preset — used by the kit itself and a real care-records system.",
+  "skills": [
+    "reuse-before-create",
+    "layout-composition",
+    "react-composition-patterns",
+    "react-state-and-effects",
+    "modular-architecture",
+    "abstraction-review",
+    "verify-clean-code"
+  ],
+  "extensions": [".ts", ".tsx", ".js", ".jsx", ".mjs", ".mts"],
+  "config": {
+    "duplicates": { "src": "src", "minTokens": 50, "threshold": 3, "ignore": [] },
+    "modularity": { "src": "src", "maxFileLines": 300, "maxFunctionLines": 80, "maxClassMethods": 10 },
+    "docs": { "src": "src", "ignorePaths": [], "ignoreExports": [] },
+    "imports": { "deny": [] }
+  }
+}

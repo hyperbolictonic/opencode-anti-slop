@@ -20,7 +20,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { extractExports } from './lib.mjs';
-import { loadConfig, gateArgs, collectPathFiles, resolveScanTarget, applyIgnorePaths } from './cli.mjs';
+import { loadConfig, gateArgs, collectPathFiles, resolveScanTarget, applyIgnorePaths, scanExtensions } from './cli.mjs';
 import { baselineGate } from './baseline.mjs';
 
 // Defaults < anti-slop.config.json < CLI flags.
@@ -51,7 +51,7 @@ const ignoreExports = Array.isArray(cfgDocs.ignoreExports)
   : (hasNextConfig ? NEXTJS_EXPORTS : []);
 const ignorePaths = Array.isArray(cfgDocs.ignorePaths) ? cfgDocs.ignorePaths : [];
 
-const allFiles = positionals.length > 0 ? collectPathFiles(positionals) : resolveScanTarget(args.src);
+const allFiles = positionals.length > 0 ? collectPathFiles(positionals, { extensions: scanExtensions(loadConfig()) }) : resolveScanTarget(args.src, { extensions: scanExtensions(loadConfig()) });
 // ignorePaths applies in both modes (per-file/staged and whole-tree), so the
 // hook never rejects files the config says to ignore.
 const files = applyIgnorePaths(allFiles, ignorePaths, { label: 'docs.ignorePaths', src: args.src });

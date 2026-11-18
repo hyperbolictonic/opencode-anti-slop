@@ -81,12 +81,30 @@ export function bootstrapGate(argv, { usage, spec, defaults }) {
 }
 
 /**
+ * The scan extension set for a gate run: `config.scan.extensions` (a preset
+ * may write it) when present and valid, otherwise the default JS/TS set.
+ */
+export function scanExtensions(config) {
+  const exts = config?.scan?.extensions;
+  if (exts === undefined) return null;
+  if (
+    Array.isArray(exts) && exts.length > 0 &&
+    exts.every((x) => typeof x === 'string' && /^\.[A-Za-z0-9]+$/.test(x))
+  ) return exts;
+  console.error('[warn] scan.extensions must be a non-empty array of dot-extensions (e.g. [".py"]); using defaults.');
+  return null;
+}
+
+/**
  * Resolve explicit path arguments (files or directories) into { full, rel }
  * source entries, applying the same filters as walk(). Exits 1 on a missing
  * path. Used by gate scripts in git-hook staged-file mode.
- * `includeTests` opts in to test/spec files (duplicates.includeTests).
+ * `opts.includeTests` opts in to test/spec files; `opts.extensions` overrides
+ * the scanned extension set (preset support).
  */
-export function collectPathFiles(paths, includeTests = false) {
+export function collectPathFiles(paths, opts = {}) {
+  const { includeTests = false, extensions } = opts;
+  const exts = extensions ? new Set(extensions) : SOURCE_EXT;
   const files = [];
   for (const p of paths) {
     const abs = path.resolve(p);
@@ -95,9 +113,9 @@ export function collectPathFiles(paths, includeTests = false) {
       process.exit(1);
     }
     if (statSync(abs).isDirectory()) {
-      files.push(...walk(abs, abs, includeTests));
+      files.push(...walk(abs, abs, opts));
     } else if (
-      SOURCE_EXT.has(path.extname(abs)) &&
+      (SOURCE_EXT.has(path.extname(abs)) || exts.has(path.extname(abs))) &&
       !isGenerated(abs.split(path.sep).join('/')) &&
       (includeTests || !IGNORE_FILE.test(abs))
     ) {
@@ -110,18 +128,19 @@ export function collectPathFiles(paths, includeTests = false) {
 /**
  * Resolve the scan root given to a gate (--src): accepts a directory (walked)
  * or a single file. Exits 1 when the path does not exist.
- * `includeTests` opts in to test/spec files (duplicates.includeTests).
+ * `opts.includeTests` opts in to test/spec files (duplicates.includeTests).
+ * `opts.extensions` overrides the scanned extension set (preset support).
  */
-export function resolveScanTarget(src, includeTests = false) {
+export function resolveScanTarget(src, opts = {}) {
   const abs = path.resolve(src);
   if (!existsSync(abs)) {
     console.error(`Source directory not found: ${abs}`);
     process.exit(1);
   }
   if (statSync(abs).isFile()) {
-    return collectPathFiles([src], includeTests);
+    return collectPathFiles([src], opts);
   }
-  return walk(abs, abs, includeTests);
+  return walk(abs, abs, opts);
 }
 
 /**
