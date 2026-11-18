@@ -4,6 +4,9 @@
  * it passed review, it never ran. (Exactly this happened: check-encoding's
  * tests were orphaned for two releases because a script edit quietly did not
  * match.)
+ *
+ * Adopter repos receive these tests as reference but may not wire them into
+ * their own `npm test`; there the guard skips instead of failing.
  */
 
 import test from 'node:test';
@@ -22,12 +25,17 @@ function testFilesIn(dir) {
     .sort();
 }
 
-test('npm test runs every test file (no orphaned suites)', () => {
+test('npm test runs every test file (no orphaned suites)', (t) => {
   const pkg = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
   const declared = new Set(
     pkg.scripts.test.split(/\s+/).filter((part) => part.endsWith('.test.mjs')),
   );
   const onDisk = [...testFilesIn('scripts/anti-slop'), ...testFilesIn('presets')];
+
+  if (declared.size === 0) {
+    t.skip('this package does not run the gate suites in scripts.test');
+    return;
+  }
 
   const notRun = onDisk.filter((f) => !declared.has(f));
   assert.deepEqual(notRun, [], `test file(s) exist but are not in scripts.test: ${notRun.join(', ')}`);
