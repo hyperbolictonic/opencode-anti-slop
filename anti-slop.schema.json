@@ -38,6 +38,18 @@
         "ignoreExports": { "type": "array", "items": { "type": "string" }, "description": "export names that are framework configuration, not shared surface (Next.js segment config is auto-defaulted when next.config.* exists)" }
       }
     },
+    "encoding": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Encoding guard tuning. Build output (dist, dist-electron, build, .output, .svelte-kit, .nuxt, release, _site, ...) is always skipped; use ignorePaths for repo-specific generated directories.",
+      "properties": {
+        "ignorePaths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "globs (scan-root- or repo-relative) exempt from the encoding gate; printed on every run like every other exemption"
+        }
+      }
+    },
     "scan": {
       "type": "object",
       "additionalProperties": false,

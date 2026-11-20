@@ -29,7 +29,7 @@ export function scanExtensions(config) {
   return null;
 }
 
-const KNOWN_SECTIONS = new Set(['duplicates', 'modularity', 'docs', 'imports', 'scan', '$schema', '_comment']);
+const KNOWN_SECTIONS = new Set(['duplicates', 'modularity', 'docs', 'imports', 'encoding', 'scan', '$schema', '_comment']);
 
 /** Keys each section accepts. Anything else is a typo or an attempt to tune
  * the gate away; either way it must not be ignored silently. */
@@ -38,6 +38,7 @@ const KNOWN_SECTION_KEYS = {
   modularity: new Set(['src', 'maxFileLines', 'maxFunctionLines', 'maxClassMethods', 'ignorePaths']),
   docs: new Set(['src', 'ignorePaths', 'ignoreExports']),
   imports: new Set(['src', 'deny']),
+  encoding: new Set(['ignorePaths']),
   scan: new Set(['extensions']),
 };
 
@@ -93,6 +94,7 @@ function validateConfig(parsed) {
   arr('modularity', 'ignorePaths');
   arr('docs', 'ignorePaths');
   arr('docs', 'ignoreExports');
+  arr('encoding', 'ignorePaths');
   arr('scan', 'extensions');
   if (parsed.imports?.deny !== undefined && !Array.isArray(parsed.imports.deny)) {
     warns.push('imports.deny must be an array of { from, forbid } rules');

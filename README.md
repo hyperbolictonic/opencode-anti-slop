@@ -409,6 +409,11 @@ your tuning. Editor autocomplete:
   from the component index**, so the generator and the gate always agree.
   `ignoreExports`: export names that are framework configuration; the Next.js
   segment-config set is auto-defaulted when `next.config.*` exists.
+- **`encoding`** — `ignorePaths`: globs exempt from the mojibake/BOM gate.
+  Build output (`dist`, `dist-electron`, `build`, `out`, `.output`,
+  `.svelte-kit`, `.nuxt`, `release`, `_site`, ...) is skipped automatically;
+  use this for repo-specific generated directories. Exemptions are printed on
+  every run.
 - **`imports.deny`** — dependency-direction rules: a file matching `from`
   importing a file matching `forbid` is a violation. With no rules, the import
   gate still detects circular dependencies and says so. Deny violations are

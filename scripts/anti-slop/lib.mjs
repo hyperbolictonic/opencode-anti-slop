@@ -13,6 +13,9 @@ import path from 'node:path';
 export const EXCLUDE_DIRS = new Set([
   'node_modules', 'dist', 'build', 'out', '.next', '.turbo',
   'coverage', 'storybook-static', '__tests__', '__mocks__',
+  // Framework build output that is not namespaced under dist/ or build/:
+  // generated bundles legitimately contain mojibake-looking sequences.
+  'dist-electron', 'out-tsc', '.output', '.svelte-kit', '.nuxt', 'release', '_site',
 ]);
 /** Filename patterns never gated: test/spec/story files (any JS/TS extension incl. mjs/mts) and type declaration shims. */
 export const IGNORE_FILE = /(\.test|\.spec|\.stories|\.d)\.[mc]?[tj]sx?$/;

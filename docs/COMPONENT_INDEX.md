@@ -20,7 +20,7 @@ Inventory of shared layouts, components, hooks, services, and utilities under `s
 | `anti-slop/check-docs-links.mjs` | `repoMarkdownFiles` | Repo-relative .md files, excluding tooling and generated noise. |
 | `anti-slop/check-docs-links.mjs` | `githubSlug` | GitHub-style heading slug: lowercase, punctuation stripped (unicode-safe), |
 | `anti-slop/check-docs-links.mjs` | `headingSlugs` | Slug set for every markdown heading in the source (fenced lines excluded). |
-| `anti-slop/check-docs-links.mjs` | `extractLinks` | Markdown links in the source, with fenced blocks excluded. |
+| `anti-slop/check-docs-links.mjs` | `extractLinks` | Markdown links in the source, with fenced blocks and inline code spans |
 | `anti-slop/check-docs-links.mjs` | `checkMarkdown` | Check one markdown file. Returns a list of problems: |
 | `anti-slop/check-encoding.mjs` | `isSuspectMojibake` | True when text carries the classic UTF-8-as-CP1252 mojibake signatures. |
 | `anti-slop/check-encoding.mjs` | `hasCorruptionMarkers` | True when text carries corruption that is still valid UTF-8: control |
