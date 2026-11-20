@@ -6,7 +6,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -26,6 +26,10 @@ function fixture(config) {
 
 function run(dir) {
   return spawnSync(process.execPath, [GATE], { cwd: dir, encoding: 'utf8' });
+}
+
+function runArgs(dir, args) {
+  return spawnSync(process.execPath, [GATE, ...args], { cwd: dir, encoding: 'utf8' });
 }
 
 test('modularity: an over-budget file fails the gate', () => {
@@ -57,5 +61,18 @@ test('modularity: typed method signatures are measured (regression: `): Type {`)
   const r = run(dir);
   assert.equal(r.status, 1);
   assert.match(r.stdout, /\[function\]/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('modularity: per-file baseline keys match the full run (staged mode)', () => {
+  const dir = fixture({ modularity: { src: 'src' } }); // src/big.ts over budget
+  const update = runArgs(dir, ['--update-baseline']);
+  assert.equal(update.status, 0, update.stderr);
+
+  const baseline = JSON.parse(readFileSync(path.join(dir, 'anti-slop.baseline.json'), 'utf8'));
+  assert.deepEqual(Object.keys(baseline.modularity.files), ['big.ts'], 'baseline must be scan-relative');
+
+  const perFile = runArgs(dir, ['src/big.ts']);
+  assert.equal(perFile.status, 0, perFile.stderr);
   rmSync(dir, { recursive: true, force: true });
 });

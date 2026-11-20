@@ -27,7 +27,7 @@ import {
   stripNoise, lineOf, isFunctionBody,
 } from './lib.mjs';
 import {
-  gateArgs, collectPathFiles, resolveScanTarget, applyIgnorePaths,
+  gateArgs, collectPathFiles, resolveScanTarget, applyIgnorePaths, toScanRelative,
 } from './cli.mjs';
 import { loadConfig, scanExtensions } from './config.mjs';
 import { baselineGate } from './baseline.mjs';
@@ -134,7 +134,12 @@ if (modIgnore.length > 0) {
   );
 }
 const files = applyIgnorePaths(
-  positionals.length > 0 ? collectPathFiles(positionals, { extensions: scanExtensions(loadConfig()) }) : resolveScanTarget(args.src, { extensions: scanExtensions(loadConfig()) }),
+  toScanRelative(
+    positionals.length > 0
+      ? collectPathFiles(positionals, { extensions: scanExtensions(loadConfig()) })
+      : resolveScanTarget(args.src, { extensions: scanExtensions(loadConfig()) }),
+    args.src,
+  ),
   modIgnore,
   { label: 'modularity.ignorePaths', src: args.src },
 );
