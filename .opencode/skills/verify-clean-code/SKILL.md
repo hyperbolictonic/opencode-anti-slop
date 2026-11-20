@@ -30,7 +30,10 @@ Never weaken the check to make it pass. Repos with a committed
 `anti-slop.baseline.json` instead fail only on duplication newer than the
 baseline — do not update the baseline to absorb your new debt. If the total is
 unchanged after your change, you relocated debt rather than removing it: the
-clone still exists, now harder to find. Fix the structure.
+clone still exists, now harder to find. Fix the structure. The gate enforces
+this: `--update-baseline` refuses to grow the total and warns when the file set
+moves at an unchanged total; `--force` exists for a deliberate owner decision,
+not as a convenience.
 
 ## 3. Modularity check
 

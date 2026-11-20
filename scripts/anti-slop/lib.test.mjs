@@ -15,6 +15,7 @@ import path from 'node:path';
 
 import {
   extractExports,
+  isFunctionBody,
   isGenerated,
   jsdocBefore,
   lineOf,
@@ -186,4 +187,27 @@ test('isGenerated: payload-types and next-env, nothing else', () => {
   assert.ok(isGenerated('next-env.d.ts'));
   assert.ok(!isGenerated('src/lib/dbs.ts'));
   assert.ok(!isGenerated('types.ts'));
+});
+
+// --- isFunctionBody ----------------------------------------------------------
+
+/** Brace index that opens the body in `source` (the last `{`). */
+const bodyBrace = (source) => source.lastIndexOf('{');
+
+test('isFunctionBody: params, typed returns, generics and arrows', () => {
+  assert.ok(isFunctionBody('name(a, b) {', bodyBrace('name(a, b) {')));
+  assert.ok(isFunctionBody('public run(): Promise<void> {', bodyBrace('public run(): Promise<void> {')));
+  assert.ok(isFunctionBody('function f<T>(x: T): T {', bodyBrace('function f<T>(x: T): T {')));
+  assert.ok(isFunctionBody('const f = (x) => {', bodyBrace('const f = (x) => {')));
+  assert.ok(isFunctionBody('get foo() {', bodyBrace('get foo() {')));
+});
+
+test('isFunctionBody: control flow, classes, literals and calls are not bodies', () => {
+  assert.ok(!isFunctionBody('if (x) {', bodyBrace('if (x) {')));
+  assert.ok(!isFunctionBody('for (const x of xs) {', bodyBrace('for (const x of xs) {')));
+  assert.ok(!isFunctionBody('switch (x) {', bodyBrace('switch (x) {')));
+  assert.ok(!isFunctionBody('class X {', bodyBrace('class X {')));
+  assert.ok(!isFunctionBody('else {', bodyBrace('else {')));
+  assert.ok(!isFunctionBody('const x = {', bodyBrace('const x = {')));
+  assert.ok(!isFunctionBody('foo({', bodyBrace('foo({')));
 });

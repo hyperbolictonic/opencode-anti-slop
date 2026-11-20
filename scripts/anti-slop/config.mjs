@@ -34,7 +34,7 @@ const KNOWN_SECTIONS = new Set(['duplicates', 'modularity', 'docs', 'imports', '
 /** Keys each section accepts. Anything else is a typo or an attempt to tune
  * the gate away; either way it must not be ignored silently. */
 const KNOWN_SECTION_KEYS = {
-  duplicates: new Set(['src', 'minTokens', 'threshold', 'ignore', 'includeTests']),
+  duplicates: new Set(['src', 'minTokens', 'threshold', 'maxDuplicatedLines', 'ignore', 'includeTests']),
   modularity: new Set(['src', 'maxFileLines', 'maxFunctionLines', 'maxClassMethods', 'ignorePaths']),
   docs: new Set(['src', 'ignorePaths', 'ignoreExports']),
   imports: new Set(['src', 'deny']),
@@ -84,6 +84,7 @@ function validateConfig(parsed) {
   };
   num('duplicates', 'minTokens');
   num('duplicates', 'threshold');
+  num('duplicates', 'maxDuplicatedLines');
   arr('duplicates', 'ignore');
   bool('duplicates', 'includeTests');
   num('modularity', 'maxFileLines');

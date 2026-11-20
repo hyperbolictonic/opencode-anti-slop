@@ -388,7 +388,11 @@ your tuning. Editor autocomplete:
 
 - **`duplicates`** — `minTokens`: clone window size in normalized tokens
   (lower = more sensitive). `threshold`: max duplicated-lines **percent across
-  the scanned tree**; `0` disables failing (report only). `ignore`: globs
+  the scanned tree**; `0` disables failing (report only). It is a **ratio**:
+  adding a large clean file lowers it without removing a clone, so
+  `maxDuplicatedLines` (absolute ceiling, unset by default) and a committed
+  baseline are the guards against dilution — the gate checks both before the
+  percentage. `ignore`: globs
   relative to the scan root for **framework-idiomatic declarative files** — their
   repetition is shape, not logic. `includeTests` (default `false`): also scan
   `*.test.*`/`*.spec.*` files — copy-pasted test scaffolding is logic that

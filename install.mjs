@@ -194,7 +194,7 @@ const configDest = path.join(target, 'anti-slop.config.json');
 if (!existsSync(configDest)) {
   const base = {
     duplicates: { src: 'src', minTokens: 50, threshold: 3, ignore: [] },
-    modularity: { src: 'src', maxFileLines: 300, maxFunctionLines: 80, maxClassMethods: 10 },
+    modularity: { src: 'src', maxFileLines: 500, maxFunctionLines: 80, maxClassMethods: 10 },
     docs: { src: 'src', ignorePaths: [], ignoreExports: [] },
     imports: { deny: [] },
   };

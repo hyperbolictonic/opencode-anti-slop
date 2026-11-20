@@ -45,3 +45,17 @@ test('modularity: ignorePaths exempts the file AND prints a notice naming the ex
   assert.match(r.stdout, /needs decomposition, not an exemption/);
   rmSync(dir, { recursive: true, force: true });
 });
+
+test('modularity: typed method signatures are measured (regression: `): Type {`)', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'antislop-typed-'));
+  mkdirSync(path.join(dir, 'src'), { recursive: true });
+  const body = Array.from({ length: 90 }, (_, i) => `    const v${i} = ${i};`).join('\n');
+  writeFileSync(
+    path.join(dir, 'src', 'svc.ts'),
+    `export class Svc {\n  public run(): Promise<void> {\n${body}\n  }\n}\n`,
+  );
+  const r = run(dir);
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /\[function\]/);
+  rmSync(dir, { recursive: true, force: true });
+});

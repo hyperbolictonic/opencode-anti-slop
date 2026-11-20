@@ -9,7 +9,8 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -55,4 +56,28 @@ test('installer: --help exits 0 (a missing import must not reach users)', () => 
   assert.equal(run.status, 0, run.stderr);
   assert.match(run.stdout, /Usage: npx/);
   assert.match(run.stdout, /available: default/);
+});
+
+test('starter config: the file budget matches the schema default and the default preset', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'antislop-starter-'));
+  try {
+    const run = spawnSync(
+      process.execPath,
+      [path.join(ROOT, 'install.mjs'), '.', '--for', 'default'],
+      { cwd: dir, encoding: 'utf8' },
+    );
+    assert.equal(run.status, 0, run.stderr);
+
+    const starter = JSON.parse(readFileSync(path.join(dir, 'anti-slop.config.json'), 'utf8'));
+    const schema = JSON.parse(readFileSync(path.join(ROOT, 'anti-slop.schema.json'), 'utf8'));
+    const manifest = JSON.parse(readFileSync(path.join(ROOT, 'presets/default/manifest.json'), 'utf8'));
+
+    const budget = starter.modularity.maxFileLines;
+    assert.equal(budget, schema.properties.modularity.properties.maxFileLines.default,
+      'starter config disagrees with the schema default');
+    assert.equal(budget, manifest.config.modularity.maxFileLines,
+      'starter config disagrees with the default preset');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

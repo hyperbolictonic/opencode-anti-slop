@@ -24,7 +24,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
-  stripNoise, lineOf,
+  stripNoise, lineOf, isFunctionBody,
 } from './lib.mjs';
 import {
   gateArgs, collectPathFiles, resolveScanTarget, applyIgnorePaths,
@@ -55,31 +55,6 @@ const { args, positionals } = gateArgs({
 });
 const paths = positionals;
 
-const CONTROL_KEYWORDS = new Set(['if', 'for', 'while', 'switch', 'catch']);
-
-/** True when the `{` at openBraceIdx opens a control-flow block (if/for/while/
- * switch/catch): the `{` is preceded by a `)` whose matching `(` follows one of
- * the control keywords. `foo(x) {` (method shorthand) is NOT control flow. */
-function isControlFlow(stripped, openBraceIdx) {
-  let j = openBraceIdx - 1;
-  let depth = 0;
-  while (j >= 0) {
-    const ch = stripped[j];
-    if (ch === ')') depth++;
-    else if (ch === '(') {
-      depth--;
-      if (depth === 0) break;
-    }
-    j--;
-  }
-  if (j < 0) return false;
-  let k = j - 1;
-  while (k >= 0 && /\s/.test(stripped[k])) k--;
-  const end = k;
-  while (k >= 0 && /[\w$]/.test(stripped[k])) k--;
-  return CONTROL_KEYWORDS.has(stripped.slice(k + 1, end + 1));
-}
-
 function analyze(source, limits) {
   const findings = [];
   const stripped = stripNoise(source);
@@ -90,8 +65,7 @@ function analyze(source, limits) {
   }
 
   // Brace matching; record regions opened by a function-like `{`.
-  // A `{` is function-like when the preceding non-space char is `)` (params)
-  // or `>` of an arrow `=>`.
+  // isFunctionBody covers params, typed return annotations and arrows.
   const stack = []; // { depth, start, isFn }
   let depth = 0;
   const regions = []; // { startIdx, endIdx, isFn }
@@ -101,19 +75,15 @@ function analyze(source, limits) {
   for (let i = 0; i < stripped.length; i++) {
     const c = stripped[i];
     if (c === '{') {
-      let j = i - 1;
-      while (j >= 0 && /\s/.test(stripped[j])) j--;
-      const prev = j >= 0 ? stripped[j] : '';
       // detect `class X ... {`
       const head = stripped.slice(Math.max(0, i - 200), i);
       const cm = /(?:^|[\s;}])class\s+([A-Za-z0-9_$]+)[^{}]*$/.exec(head);
-      // `if (x) {`, `for (...) {` etc. end in `)` like a function body but are
-      // control flow — excluded by the keyword before their opening paren.
-      let isFn = head.trimEnd().endsWith('=>');
-      if (!isFn && prev === ')') isFn = !isControlFlow(stripped, i);
+      // `if (x) {` / `for (...) {` are control flow; `run(): Promise<T> {` is a
+      // function body even though the brace follows the return type.
+      const isFn = isFunctionBody(stripped, i);
       if (cm && classStart === null) {
         classStart = { name: cm[1], declIdx: i, braceDepth: depth, methods: 0 };
-      } else if (classStart && classStart.braceDepth !== null && depth === classStart.braceDepth + 1 && prev === ')') {
+      } else if (classStart && classStart.braceDepth !== null && depth === classStart.braceDepth + 1 && isFn) {
         classStart.methods++;
       }
       stack.push({ depth, start: i, isFn, classStart });

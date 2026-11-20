@@ -135,7 +135,11 @@ export function resolveScanTarget(src, opts = {}) {
  * (git-hook staged mode).
  */
 export function gateArgs({ argv, usage, spec, defaults, allowPositionals = false }) {
-  const { args, positionals } = bootstrapGate(argv, { usage, spec, defaults });
+  // `--force` is a universal escape hatch; only --update-baseline acts on it.
+  // Recognised here so every gate accepts it without duplicating the flag.
+  const { args, positionals } = bootstrapGate(argv, {
+    usage, spec: { '--force': 'flag', ...spec }, defaults,
+  });
   if (!allowPositionals && positionals.length > 0) {
     console.error(`Unexpected arguments: ${positionals.join(' ')} (this script takes flags only)`);
     process.exit(1);

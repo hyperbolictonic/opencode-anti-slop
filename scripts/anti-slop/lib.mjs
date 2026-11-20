@@ -160,6 +160,60 @@ export function lineOf(stripped, idx) {
   return line;
 }
 
+const CONTROL_KEYWORDS = new Set(['if', 'for', 'while', 'switch', 'catch']);
+
+/**
+ * True when the `{` at openBraceIdx opens a control-flow block (if/for/while/
+ * switch/catch): the nearest `)` before the brace belongs to a `(` that follows
+ * one of the control keywords. `foo(x) {` is NOT control flow.
+ */
+export function isControlFlow(stripped, openBraceIdx) {
+  let j = openBraceIdx - 1;
+  let depth = 0;
+  while (j >= 0) {
+    const ch = stripped[j];
+    if (ch === ')') depth++;
+    else if (ch === '(') {
+      depth--;
+      if (depth === 0) break;
+    }
+    j--;
+  }
+  if (j < 0) return false;
+  let k = j - 1;
+  while (k >= 0 && /\s/.test(stripped[k])) k--;
+  const end = k;
+  while (k >= 0 && /[\w$]/.test(stripped[k])) k--;
+  return CONTROL_KEYWORDS.has(stripped.slice(k + 1, end + 1));
+}
+
+/**
+ * True when the `{` at openBraceIdx opens a function/method body rather than a
+ * class, object literal, or control block. Covers:
+ *   name(params) {            method shorthand
+ *   public run(): Promise<T> {  typed signature — the brace follows the return
+ *                               type, not the `)`, which the old `prev === ')'`
+ *                               check missed entirely
+ *   (x) => {                  arrow
+ *   function f<T>(x: T): T {  generics + return type
+ * while rejecting `if (x) {`, `class X {`, `else {`, `foo({` and `const x = {`.
+ */
+export function isFunctionBody(stripped, openBraceIdx) {
+  const head = stripped.slice(Math.max(0, openBraceIdx - 400), openBraceIdx).trimEnd();
+  if (head.endsWith('=>')) return true;
+
+  // The candidate parameter list must sit in the current statement, i.e. after
+  // the last statement boundary. Without a `)` there is no parameter list at
+  // all (`class X {`, `else {`, `const x = {`).
+  let boundary = -1;
+  for (let i = head.length - 1; i >= 0; i--) {
+    if (head[i] === ';' || head[i] === '{' || head[i] === '}') { boundary = i; break; }
+  }
+  if (!head.slice(boundary + 1).includes(')')) return false;
+
+  return !isControlFlow(stripped, openBraceIdx);
+}
+
 /**
  * Returns the first line of the JSDoc/TSDoc block immediately preceding
  * source index `idx`, or null if there is none.
