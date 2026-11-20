@@ -10,6 +10,8 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
 import {
   bootstrapGate, globToRegex, matchesAnyGlob, parseFlags, gateArgs, applyIgnorePaths,
@@ -199,4 +201,41 @@ test('saveBaseline/loadBaseline: roundtrip with sorted keys', () => {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+const CLI_URL = new URL('./config.mjs', import.meta.url).href;
+
+/** Run loadConfig() in a temp repo with the given config; return its stderr. */
+function configWarning(config) {
+  const dir = mkdtempSync(path.join(tmpdir(), 'antislop-cfg-'));
+  writeFileSync(path.join(dir, 'anti-slop.config.json'), JSON.stringify(config));
+  try {
+    const run = spawnSync(
+      process.execPath,
+      ['--input-type=module', '-e', `import { loadConfig } from ${JSON.stringify(CLI_URL)}; loadConfig();`],
+      { cwd: dir, encoding: 'utf8' },
+    );
+    return run.stderr;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('config: per-file budget overrides are rejected by name, not ignored silently', () => {
+  const stderr = configWarning({ modularity: { fileLineOverrides: { 'src/chassis.ts': 4300 } } });
+  assert.match(stderr, /modularity\.fileLineOverrides is not supported and is IGNORED/);
+  assert.match(stderr, /the limit still applies to every file/);
+  assert.match(stderr, /Decompose the file by responsibility/);
+});
+
+test('config: unknown keys inside a section warn (typo guard)', () => {
+  const stderr = configWarning({ modularity: { maxFileLine: 400 } });
+  assert.match(stderr, /unknown key "modularity\.maxFileLine"/);
+});
+
+test('config: known keys produce no warning', () => {
+  const stderr = configWarning({
+    modularity: { maxFileLines: 300, ignorePaths: ['src/generated/**'] },
+  });
+  assert.equal(stderr.trim(), '');
 });

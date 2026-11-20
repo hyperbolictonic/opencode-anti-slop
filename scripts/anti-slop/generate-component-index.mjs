@@ -23,7 +23,8 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { walk, extractExports } from './lib.mjs';
-import { loadConfig, applyIgnorePaths } from './cli.mjs';
+import { applyIgnorePaths } from './cli.mjs';
+import { loadConfig } from './config.mjs';
 
 // --- args -------------------------------------------------------------------
 function parseArgs(argv) {

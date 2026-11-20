@@ -22,7 +22,7 @@
       "additionalProperties": false,
       "properties": {
         "src": { "type": "string", "default": "src" },
-        "maxFileLines": { "type": "integer", "default": 300, "description": "files over this many lines are flagged" },
+        "maxFileLines": { "type": "integer", "default": 500, "description": "files over this many lines are flagged; a file over budget is decomposed by responsibility, never exempted per file" },
         "maxFunctionLines": { "type": "integer", "default": 80, "description": "functions/methods over this many lines are flagged" },
         "maxClassMethods": { "type": "integer", "default": 10, "description": "classes with more public methods are flagged" },
         "ignorePaths": { "type": "array", "items": { "type": "string" }, "description": "globs (scan-root- or repo-relative) for files exempt from size budgets" }

@@ -1,6 +1,6 @@
 ---
 name: Modular Architecture
-description: Enforces modular, object-oriented design for UI and non-UI code — single-responsibility modules, dependency injection behind adapters, and no monolithic files, god classes, or god functions. Trigger when writing or refactoring Node/backend services, API routes, domain logic, shared libraries, or splitting large files.
+description: Enforces modular, object-oriented design for UI and non-UI code — single-responsibility modules, injected dependencies, and no monoliths, god classes, or god functions. Trigger when writing or refactoring Node/backend services, API routes, domain logic, shared libraries, splitting a large file or god class, or reviewing a decomposition.
 ---
 
 # Modular Architecture
@@ -45,14 +45,96 @@ and non-UI code alike.
   or `Service` alone is a design smell — name by responsibility
   (`InvoiceMailer`, `SessionStore`).
 
+## Decomposing a monolith: components, not chunks
+
+A size budget is a **proxy** for "this file has too many responsibilities".
+When it fires on a 4,000-line god class, the cheapest way to make the number
+smaller is to move text — and moving text is never decomposition.
+
+**The rule.** A component is a class (or small module) that owns one
+responsibility, declares its dependencies explicitly (a `…Deps` interface),
+and is reachable through a field on the composed object (`chassis.research`).
+Anything selected by **line numbers** is a chunk, not a component.
+
+| Accepted | Rejected |
+|---|---|
+| `class ResearchSurface` + `ResearchDeps` → `chassis.research` | `part-1.ts`, `part-2.ts` cut by line count |
+| State moved first to its own module (`researchState`) | `base.ts` → `init.ts` → `state.ts` inheritance chain |
+| Explicit seams (injected logger, UI port) | Moving methods without the state they touch |
+| One component per commit, gates after each | A per-file line-budget override to silence the metric |
+
+**The tell.** If the metric goes green while the class still owns the same
+responsibilities and dependencies, it is a remix of the slop. Count
+responsibilities, not lines.
+
+### Why the lazy fixes fail
+
+| Lazy fix | What it costs |
+|---|---|
+| Cut by line range | Slices through field initializers and methods; the typechecker fails on every cut expression |
+| Inheritance chain of parts | Still one class across files, plus invented rules (a field cannot call a derived method); usually reverted |
+| Move a block by line numbers | Private helpers interleaved in the range are used elsewhere and break |
+| Move methods, leave state | `this.state` / `this.broadcast` / `this.emit` errors |
+| Raise the budget or add an override | The monolith becomes invisible; the gate now protects nothing |
+| Update the duplicates baseline after a split | Debt relocated at the same total — an accepted clone nobody can find |
+
+The loop is always the same: metric fires → cut text → compile error → revert
+→ chain parts → still one class → raise the budget → green, nothing improved.
+Eight reverted attempts on one file is the normal cost of skipping the
+inventory.
+
+### Review checklist — reject a split if ANY answer is "no"
+
+1. **Named responsibility.** Can a reviewer state the module's one job in one
+   sentence without saying "part of the old class"?
+2. **Explicit dependencies.** Does it take a `…Deps` interface, or reach back
+   into the original class/closure? Reaching back = rejected.
+3. **No text slicing.** Were members chosen by responsibility and moved whole,
+   including the private helpers they call? `part-*`, `base.ts` + chain, or
+   line-range moves = rejected.
+4. **State moved first.** Shared state lives in its own module *before* the
+   behaviour that mutates it, and is mutated in place — not copied.
+5. **Call sites updated.** Consumers go through the new surface; the public
+   entry point stays stable.
+6. **Gates, not baseline.** All gates pass *and* the duplicates total dropped
+   or stayed level — never rose to absorb a move.
+7. **Fits its own budget.** The component is ≤ 500 lines. A bigger
+   responsibility is split by sub-responsibility *before* the file is written
+   (research = llm / crawl / citations, not one 862-line surface).
+
+### Red flags (auto-reject)
+
+- `part-*`, `base.ts`, `*-part-a` file names.
+- A class that `extends` another only to split a file.
+- A per-file budget override (`fileLineOverrides`): the kit has none — the key
+  is rejected and the limit still applies.
+- Duplicates baseline updated with an unchanged total.
+- Lines selected by line number instead of by member.
+- A component larger than the budget that triggered the split.
+
+### The procedure that works
+
+1. **Inventory by responsibility**: for each member, its size and every
+   `this.*` it touches — field (state) or method (behaviour).
+2. **Move the state first** to its own module, mutated in place.
+3. **Define the component**: class + explicit `…Deps`, one responsibility,
+   ≤ 500 lines.
+4. **Expose it as a field** on the composed object — never a link in an
+   inheritance chain.
+5. **Update call sites**; keep the entry point stable.
+6. **One component per commit**, typecheck + gates after each.
+
 ## Size budgets (enforced by scripts/anti-slop/check-modularity.mjs)
 
-- File: <= ~300 lines.
+- File: <= ~500 lines.
 - Function/method: <= ~80 lines.
 - Class: <= ~10 public methods.
 
-Exceeding a budget is a signal to split by responsibility — not to compress
-code or disable the check.
+Exceeding a budget is a signal to split by responsibility — never to compress
+code, raise the budget, or exempt the file. There are no per-file overrides
+(`fileLineOverrides` is rejected); `modularity.ignorePaths` is for declarative
+framework files only, and the gate prints a notice naming every glob it
+exempts.
 
 ## Anti-patterns
 

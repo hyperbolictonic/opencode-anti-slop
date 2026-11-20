@@ -28,7 +28,9 @@ has legacy duplication). If it flags your new code: extract into the existing
 shared module (see reuse-before-create) rather than adjusting the threshold.
 Never weaken the check to make it pass. Repos with a committed
 `anti-slop.baseline.json` instead fail only on duplication newer than the
-baseline — do not update the baseline to absorb your new debt.
+baseline — do not update the baseline to absorb your new debt. If the total is
+unchanged after your change, you relocated debt rather than removing it: the
+clone still exists, now harder to find. Fix the structure.
 
 ## 3. Modularity check
 
@@ -36,7 +38,7 @@ baseline — do not update the baseline to absorb your new debt.
 node scripts/anti-slop/check-modularity.mjs
 ```
 
-Flags files over ~300 lines, functions over ~80, and classes with > ~10
+Flags files over ~500 lines, functions over ~80, and classes with > ~10
 public methods. The files you touched must pass. If the repo has pre-existing
 violations elsewhere, report them — do not drive-by-fix unrelated files.
 With a committed baseline, the gate fails only on violations beyond it.

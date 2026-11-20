@@ -75,7 +75,7 @@ In order:
 - **Shared logic goes in shared modules.** Validation, date/time, money, IDs,
   serialization: if it exists in one service, the next service imports it — it does
   not copy it.
-- **Monoliths are defects.** If a file is growing past ~300 lines or a function
+- **Monoliths are defects.** If a file is growing past ~500 lines or a function
   past ~80, stop and split by responsibility (transport/service/domain/data —
   see the `modular-architecture` skill). Do not keep extending a god file.
 

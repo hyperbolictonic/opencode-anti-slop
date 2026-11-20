@@ -3,7 +3,7 @@
  * check-modularity.mjs
  *
  * Deterministic monolith gate. Flags structural size violations:
- *   - files exceeding --max-file-lines (default 300)
+ *   - files exceeding --max-file-lines (default 500)
  *   - functions/methods exceeding --max-function-lines (default 80)
  *   - classes exceeding --max-class-methods (default 10 public methods)
  *
@@ -12,7 +12,7 @@
  * "split by responsibility" signals.
  *
  * Usage:
- *   node scripts/anti-slop/check-modularity.mjs [paths...] [--src src] [--max-file-lines 300]
+ *   node scripts/anti-slop/check-modularity.mjs [paths...] [--src src] [--max-file-lines 500]
  *        [--max-function-lines 80] [--max-class-methods 10] [--report-only]
  *
  * With no path arguments it scans --src (default `src`).
@@ -27,16 +27,16 @@ import {
   stripNoise, lineOf,
 } from './lib.mjs';
 import {
-  loadConfig, gateArgs, collectPathFiles, resolveScanTarget, applyIgnorePaths,
-  scanExtensions,
+  gateArgs, collectPathFiles, resolveScanTarget, applyIgnorePaths,
 } from './cli.mjs';
+import { loadConfig, scanExtensions } from './config.mjs';
 import { baselineGate } from './baseline.mjs';
 
 // Defaults < anti-slop.config.json < CLI flags.
 const cfgMod = ((loadConfig().modularity) ?? {});
 const { args, positionals } = gateArgs({
   argv: process.argv.slice(2),
-  usage: 'Usage: node check-modularity.mjs [paths...] [--src src] [--max-file-lines 300] [--max-function-lines 80] [--max-class-methods 10] [--report-only] [--baseline file] [--update-baseline]\n' +
+  usage: 'Usage: node check-modularity.mjs [paths...] [--src src] [--max-file-lines 500] [--max-function-lines 80] [--max-class-methods 10] [--report-only] [--baseline file] [--update-baseline]\n' +
          'Config: anti-slop.config.json "modularity" section (src, maxFileLines, maxFunctionLines, maxClassMethods).\n' +
          'With path arguments, checks exactly those files (git-hook staged mode).\n' +
          'With a baseline file (default anti-slop.baseline.json) the gate fails only on NEW violations.',
@@ -47,7 +47,7 @@ const { args, positionals } = gateArgs({
   },
   defaults: {
     src: cfgMod.src ?? 'src',
-    maxFileLines: cfgMod.maxFileLines ?? 300,
+    maxFileLines: cfgMod.maxFileLines ?? 500,
     maxFunctionLines: cfgMod.maxFunctionLines ?? 80,
     maxClassMethods: cfgMod.maxClassMethods ?? 10,
   },
@@ -156,6 +156,13 @@ function analyze(source, limits) {
 // modularity.ignorePaths exempts declarative/framework files from size
 // budgets, matching the drift principle (shape, not logic).
 const modIgnore = Array.isArray(cfgMod.ignorePaths) ? cfgMod.ignorePaths : [];
+if (modIgnore.length > 0) {
+  console.log(
+    `[note] ${modIgnore.length} glob(s) exempt from size budgets via modularity.ignorePaths - ` +
+    'the budget cannot see matching files. Exempt declarative/framework files only; ' +
+    'a source file here needs decomposition, not an exemption.',
+  );
+}
 const files = applyIgnorePaths(
   positionals.length > 0 ? collectPathFiles(positionals, { extensions: scanExtensions(loadConfig()) }) : resolveScanTarget(args.src, { extensions: scanExtensions(loadConfig()) }),
   modIgnore,

@@ -18,7 +18,8 @@ it is not itself an app. See `README.md` for the full picture and install flow.
   `check-encoding.mjs` (mojibake/BOM guard), `run-project-checks.mjs`
   (pre-push project checks with package-manager detection),
   `install-hooks.mjs` (git pre-commit/pre-push). Shared helpers:
-  `lib.mjs` (scanning), `cli.mjs` (CLI/config), `baseline.mjs` (ratchet).
+  `lib.mjs` (scanning), `cli.mjs` (CLI plumbing), `config.mjs` (per-repo config
+  load + validation), `baseline.mjs` (ratchet).
   Zero-dependency Node ≥ 18 ESM — do not add
   runtime npm dependencies to this repo, and do not shell out to npx-based
   tools in the gates (verified: jscpd via npx scans 0 files on some Windows

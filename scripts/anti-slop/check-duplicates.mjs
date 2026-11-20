@@ -25,8 +25,9 @@ import {
   stripNoise, tokenize,
 } from './lib.mjs';
 import {
-  loadConfig, matchesAnyGlob, gateArgs, resolveScanTarget, scanExtensions,
+  matchesAnyGlob, gateArgs, resolveScanTarget,
 } from './cli.mjs';
+import { loadConfig, scanExtensions } from './config.mjs';
 import { baselineGate } from './baseline.mjs';
 
 // --- args -------------------------------------------------------------------

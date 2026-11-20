@@ -20,7 +20,8 @@
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { extractExports } from './lib.mjs';
-import { loadConfig, gateArgs, collectPathFiles, resolveScanTarget, applyIgnorePaths, scanExtensions } from './cli.mjs';
+import { gateArgs, collectPathFiles, resolveScanTarget, applyIgnorePaths } from './cli.mjs';
+import { loadConfig, scanExtensions } from './config.mjs';
 import { baselineGate } from './baseline.mjs';
 
 // Defaults < anti-slop.config.json < CLI flags.

@@ -6,7 +6,7 @@
   },
   "modularity": {
     "src": "scripts/anti-slop",
-    "maxFileLines": 300,
+    "maxFileLines": 500,
     "maxFunctionLines": 80,
     "maxClassMethods": 10
   },

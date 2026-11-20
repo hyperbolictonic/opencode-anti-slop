@@ -24,8 +24,9 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { stripComments } from './lib.mjs';
 import {
-  loadConfig, gateArgs, resolveScanTarget, matchesAnyGlob, scanExtensions,
+  gateArgs, resolveScanTarget, matchesAnyGlob,
 } from './cli.mjs';
+import { loadConfig, scanExtensions } from './config.mjs';
 import { loadBaseline, saveBaseline, compareSets, BASELINE_FILE } from './baseline.mjs';
 
 // --- parsing ------------------------------------------------------------------

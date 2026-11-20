@@ -1,12 +1,13 @@
 /**
- * cli.mjs — shared CLI/config plumbing for the anti-slop gate scripts.
+ * cli.mjs — shared CLI plumbing for the anti-slop gate scripts.
  *
  * Zero dependencies (Node >= 18, ESM). Source-scanning helpers live in lib.mjs;
- * this module handles flag parsing, per-repo config loading, and path-to-file
- * resolution. Keep it free of scanning logic.
+ * per-repo config (loading + validation) lives in config.mjs; this module
+ * handles flag parsing, gate bootstrap and path-to-file resolution. Keep it
+ * free of scanning logic.
  */
 
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { walk, SOURCE_EXT, IGNORE_FILE, isGenerated } from './lib.mjs';
 
@@ -78,21 +79,6 @@ export function bootstrapGate(argv, { usage, spec, defaults }) {
       : (parsed.values[flag] ?? defaults[key]);
   }
   return { args, positionals: parsed.positionals };
-}
-
-/**
- * The scan extension set for a gate run: `config.scan.extensions` (a preset
- * may write it) when present and valid, otherwise the default JS/TS set.
- */
-export function scanExtensions(config) {
-  const exts = config?.scan?.extensions;
-  if (exts === undefined) return null;
-  if (
-    Array.isArray(exts) && exts.length > 0 &&
-    exts.every((x) => typeof x === 'string' && /^\.[A-Za-z0-9]+$/.test(x))
-  ) return exts;
-  console.error('[warn] scan.extensions must be a non-empty array of dot-extensions (e.g. [".py"]); using defaults.');
-  return null;
 }
 
 /**
@@ -182,85 +168,6 @@ export function applyIgnorePaths(files, globs, { label = 'ignorePaths', src } = 
     console.log(`Ignoring ${excluded} file(s) matching ${label} (${globs.join(', ')}).`);
   }
   return kept;
-}
-
-const KNOWN_SECTIONS = new Set(['duplicates', 'modularity', 'docs', 'imports', 'scan', '$schema', '_comment']);
-
-/** Light validation: unknown keys and wrong types warn instead of silently
- * disabling the tuning (a typo like "duplicate" would otherwise run the gates
- * on defaults with no signal why). */
-function validateConfig(parsed) {
-  const warns = [];
-  for (const key of Object.keys(parsed)) {
-    if (!KNOWN_SECTIONS.has(key)) warns.push(`unknown key "${key}" (ignored)`);
-  }
-  const num = (section, key) => {
-    const v = parsed[section]?.[key];
-    if (v !== undefined && (typeof v !== 'number' || Number.isNaN(v))) warns.push(`${section}.${key} must be a number`);
-  };
-  const arr = (section, key) => {
-    const v = parsed[section]?.[key];
-    if (v !== undefined && !Array.isArray(v)) warns.push(`${section}.${key} must be an array of globs/names`);
-  };
-  const bool = (section, key) => {
-    const v = parsed[section]?.[key];
-    if (v !== undefined && typeof v !== 'boolean') warns.push(`${section}.${key} must be a boolean`);
-  };
-  num('duplicates', 'minTokens');
-  num('duplicates', 'threshold');
-  arr('duplicates', 'ignore');
-  bool('duplicates', 'includeTests');
-  num('modularity', 'maxFileLines');
-  num('modularity', 'maxFunctionLines');
-  num('modularity', 'maxClassMethods');
-  arr('modularity', 'ignorePaths');
-  arr('docs', 'ignorePaths');
-  arr('docs', 'ignoreExports');
-  arr('scan', 'extensions');
-  if (parsed.imports?.deny !== undefined && !Array.isArray(parsed.imports.deny)) {
-    warns.push('imports.deny must be an array of { from, forbid } rules');
-  }
-  if (warns.length > 0) {
-    console.error(`[warn] anti-slop.config.json: ${warns.join('; ')}.`);
-  }
-}
-
-/**
- * Reads `anti-slop.config.json` from process.cwd() (repo root), returning the
- * parsed object or {} when absent (warn+{} when unparsable).
- * Scripts merge: defaults < config file < CLI flags.
- *
- * Shape:
- * {
- *   "duplicates": { "src": "src", "minTokens": 50, "threshold": 3,
- *                   "ignore": ["collections/**"] },
- *   "modularity": { "src": "src", "maxFileLines": 300, "maxFunctionLines": 80,
- *                   "maxClassMethods": 10 },
- *   "docs":       { "src": "src", "ignorePaths": ["app/(payload)/**"],
- *                   "ignoreExports": ["metadata", "dynamic"] },
- *   "imports":    { "src": "src", "deny": [{ "from": "src/domain/**",
- *                   "forbid": "src/infra/**" }] }
- * }
- *
- * `ignore` (duplicates) and `ignorePaths` (docs) exclude framework-idiomatic
- * declarative files whose repetition is shape, not logic.
- */
-export function loadConfig() {
-  const file = path.join(process.cwd(), 'anti-slop.config.json');
-  if (!existsSync(file)) return {};
-  let parsed;
-  try {
-    parsed = JSON.parse(readFileSync(file, 'utf8'));
-  } catch (err) {
-    console.error(`[warn] Could not parse anti-slop.config.json (${err.message}); using defaults.`);
-    return {};
-  }
-  if (!parsed || typeof parsed !== 'object') {
-    console.error('[warn] anti-slop.config.json is not an object; using defaults.');
-    return {};
-  }
-  validateConfig(parsed);
-  return parsed;
 }
 
 /** Convert a glob (`**`, `*`, `?`) into a RegExp tested against '/'-separated rel paths. */
