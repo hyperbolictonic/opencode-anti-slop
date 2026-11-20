@@ -210,4 +210,17 @@ test('isFunctionBody: control flow, classes, literals and calls are not bodies',
   assert.ok(!isFunctionBody('else {', bodyBrace('else {')));
   assert.ok(!isFunctionBody('const x = {', bodyBrace('const x = {')));
   assert.ok(!isFunctionBody('foo({', bodyBrace('foo({')));
+  assert.ok(!isFunctionBody('const x = useMemo(() => ({', bodyBrace('const x = useMemo(() => ({')));
+});
+
+test('isFunctionBody: semicolon-free code does not leak a previous line into the head', () => {
+  // Regression from a real Payload collection: no semicolons, and the previous
+  // line ends in `)`; `const X: CollectionConfig = {` was counted as a
+  // 119-line function.
+  const source = [
+    "const canWrite: Access = ({ req }) => hasAnyRole(getCurrentUser(req), ['admin'])",
+    '',
+    'export const CarePlans: CollectionConfig = {',
+  ].join('\n');
+  assert.ok(!isFunctionBody(source, source.lastIndexOf('{')));
 });

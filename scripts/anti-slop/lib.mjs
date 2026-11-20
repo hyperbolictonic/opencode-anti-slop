@@ -190,26 +190,29 @@ export function isControlFlow(stripped, openBraceIdx) {
 /**
  * True when the `{` at openBraceIdx opens a function/method body rather than a
  * class, object literal, or control block. Covers:
- *   name(params) {            method shorthand
+ *   name(params) {              method shorthand
  *   public run(): Promise<T> {  typed signature — the brace follows the return
- *                               type, not the `)`, which the old `prev === ')'`
- *                               check missed entirely
- *   (x) => {                  arrow
- *   function f<T>(x: T): T {  generics + return type
- * while rejecting `if (x) {`, `class X {`, `else {`, `foo({` and `const x = {`.
+ *                               type, not the `)`, which a `prev === ')'` check
+ *                               misses entirely
+ *   (x) => {                    arrow
+ *   function f<T>(x: T): T {    generics + return type
+ * while rejecting `if (x) {`, `class X {`, `else {`, `foo({`, `const x = {` and
+ * `useMemo(() => ({`.
+ *
+ * The signature head is the text since the last newline: semicolon-free code
+ * otherwise lets a previous statement's `)` leak into the window and turns
+ * every `const x: Config = {` into a phantom 100-line "function".
  */
 export function isFunctionBody(stripped, openBraceIdx) {
-  const head = stripped.slice(Math.max(0, openBraceIdx - 400), openBraceIdx).trimEnd();
+  const window = stripped.slice(Math.max(0, openBraceIdx - 400), openBraceIdx);
+  const head = window.slice(window.lastIndexOf('\n') + 1).trimEnd();
   if (head.endsWith('=>')) return true;
 
-  // The candidate parameter list must sit in the current statement, i.e. after
-  // the last statement boundary. Without a `)` there is no parameter list at
-  // all (`class X {`, `else {`, `const x = {`).
-  let boundary = -1;
-  for (let i = head.length - 1; i >= 0; i--) {
-    if (head[i] === ';' || head[i] === '{' || head[i] === '}') { boundary = i; break; }
-  }
-  if (!head.slice(boundary + 1).includes(')')) return false;
+  // A function body follows its parameter list (possibly via a return type);
+  // it never follows an operator or an opening bracket.
+  const lastChar = head[head.length - 1];
+  if (lastChar && '=(:,[?!&|+-*/%'.includes(lastChar)) return false;
+  if (!head.includes(')')) return false;
 
   return !isControlFlow(stripped, openBraceIdx);
 }
