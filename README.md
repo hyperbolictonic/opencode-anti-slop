@@ -198,6 +198,15 @@ of every shared export, which the reuse pre-flight is grounded in.
   pass with a stale entry.
 - Regeneration is one command; a `## Manual Notes` section survives it.
 
+**Two tiers, because the full index is unbounded.** Every export adds a row,
+and the file is loaded into each session — 168 exports is already ~22k
+characters (~5.5k tokens). So the generator also writes
+`docs/COMPONENT_INDEX.digest.md`: one line per **module** (bounded by file
+count, capped at 120 modules), naming its exports. That digest is what
+`opencode.json` loads; the full index stays on disk as the source of truth and
+is grepped for descriptions once a shortlist exists. Both files are verified by
+`--check`, so neither can go stale.
+
 ## Proven on a real codebase
 
 The kit's first adoption was a production **Next.js 16 + Payload 3

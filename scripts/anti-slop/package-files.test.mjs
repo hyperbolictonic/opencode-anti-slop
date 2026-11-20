@@ -99,8 +99,8 @@ test('installer: the component index is registered as an always-loaded instructi
   try {
     const config = JSON.parse(readFileSync(path.join(dir, 'opencode.json'), 'utf8'));
     assert.ok(
-      config.instructions.includes('docs/COMPONENT_INDEX.md'),
-      'the inventory must be loaded into every session, not left for the agent to find',
+      config.instructions.includes('docs/COMPONENT_INDEX.digest.md'),
+      'the bounded digest must be loaded into every session, not the unbounded index',
     );
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -116,7 +116,7 @@ test('installer: an existing opencode.json is merged, not overwritten', () => {
   });
   try {
     const config = JSON.parse(readFileSync(path.join(dir, 'opencode.json'), 'utf8'));
-    assert.deepEqual(config.instructions, ['AGENTS.md', 'docs/COMPONENT_INDEX.md']);
+    assert.deepEqual(config.instructions, ['AGENTS.md', 'docs/COMPONENT_INDEX.digest.md']);
     assert.equal(config.theme, 'x', 'unrelated keys must survive');
   } finally {
     rmSync(dir, { recursive: true, force: true });

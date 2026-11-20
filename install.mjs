@@ -216,7 +216,7 @@ if (!existsSync(configDest)) {
  */
 function ensureOpencodeInstructions(target) {
   const file = path.join(target, 'opencode.json');
-  const entry = 'docs/COMPONENT_INDEX.md';
+  const entry = 'docs/COMPONENT_INDEX.digest.md';
   if (!existsSync(file)) {
     writeFileSync(
       file,
