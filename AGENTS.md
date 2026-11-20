@@ -57,6 +57,12 @@ it is not itself an app. See `README.md` for the full picture and install flow.
 - **Editing scripts**: keep them dependency-free and Windows-safe
   (`spawnSync` with `shell: true` for npx). Test with `node <script> --help`
   and a smoke run after changes.
+- **Versions bump at publish time, not per fix.** Run
+  `npm version <patch|minor>` immediately before `npm publish`. Bumping for
+  every fix batch leaves holes in the published sequence (0.2.0, 0.3.0 and
+  0.3.1 were tagged but superseded before they were ever published, so the
+  registry jumps 0.1.12 → 0.2.1 → 0.3.2). Tags mark shipped code; the version
+  number marks what users get.
 - **`data/logs/`** contains Hypagon MCP server runtime logs — noise, not
   project artifacts. Never treat as requirements or code.
 - Rules stated in skills/scripts must be **concrete and enforceable** — prefer
