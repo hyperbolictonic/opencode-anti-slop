@@ -32,7 +32,7 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolvePreset, mergeStarterConfig } from './presets/resolve.mjs';
+import { availablePresetNames, resolvePreset, mergeStarterConfig } from './presets/resolve.mjs';
 
 const kitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 const presetsDir = path.join(kitRoot, 'presets');
