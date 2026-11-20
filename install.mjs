@@ -29,7 +29,7 @@
  *   node install.mjs [target-repo-dir] [--for <preset>] [--force] [--hooks]
  */
 
-import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { availablePresetNames, resolvePreset, mergeStarterConfig } from './presets/resolve.mjs';
@@ -207,6 +207,47 @@ if (!existsSync(configDest)) {
 }
 
 // --- manual steps -----------------------------------------------------------
+/**
+ * Register the generated inventory as an OpenCode instruction so every session
+ * starts with it: "what already exists" must be in context, not a file the
+ * agent has to remember to open. Creates opencode.json when absent; otherwise
+ * merges the entry into an existing `instructions` array without touching any
+ * other key. An unparsable config is left alone (manual step below).
+ */
+function ensureOpencodeInstructions(target) {
+  const file = path.join(target, 'opencode.json');
+  const entry = 'docs/COMPONENT_INDEX.md';
+  if (!existsSync(file)) {
+    writeFileSync(
+      file,
+      `${JSON.stringify({ $schema: 'https://opencode.ai/config.json', instructions: [entry] }, null, 2)}\n`,
+    );
+    console.log(`[ok] ${file} (registers ${entry} as an always-loaded instruction)`);
+    return;
+  }
+  let config;
+  try {
+    config = JSON.parse(readFileSync(file, 'utf8'));
+  } catch (err) {
+    console.warn(`[warn] ${file} is not valid JSON (${err.message}); add "${entry}" to "instructions" manually.`);
+    return;
+  }
+  if (!config || typeof config !== 'object' || Array.isArray(config)) {
+    console.warn(`[warn] ${file} is not a JSON object; add "${entry}" to "instructions" manually.`);
+    return;
+  }
+  const instructions = Array.isArray(config.instructions) ? config.instructions : [];
+  if (instructions.includes(entry)) {
+    console.log(`[ok] ${file} already registers ${entry}`);
+    return;
+  }
+  config.instructions = [...instructions, entry];
+  writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
+  console.log(`[ok] ${file} (added ${entry} to instructions)`);
+}
+
+ensureOpencodeInstructions(target);
+
 console.log(`
 Manual setup in ${target} (one-time):
 
@@ -219,12 +260,7 @@ Manual setup in ${target} (one-time):
    - Before marking any coding task complete: run the \`verify-clean-code\` checklist.
    ${'```'}
 
-2. opencode.json (optional, makes the inventory always loaded):
-   ${'```json'}
-   { "$schema": "https://opencode.ai/config.json", "instructions": ["docs/COMPONENT_INDEX.md"] }
-   ${'```'}
-
-3. package.json scripts:
+2. package.json scripts:
    ${'```json'}
    "scripts:anti-slop": {
      "index": "node scripts/anti-slop/generate-component-index.mjs",
@@ -233,20 +269,20 @@ Manual setup in ${target} (one-time):
    ${'```'}
    (flatten to plain keys if you prefer: "index:components", "check:dupes")
 
-4. ESLint: enable eslint-plugin-react-hooks (and the React Compiler eslint
+3. ESLint: enable eslint-plugin-react-hooks (and the React Compiler eslint
    plugin if the project uses the compiler) so hook misuse fails in the linter.
    Consider ignoring the vendored gate scripts from your repo lint:
    \`{ ignores: ['scripts/anti-slop/**'] }\` in eslint.config — they are
    self-linted by this kit's own CI.
 
-5. Generate the first inventory:  node scripts/anti-slop/generate-component-index.mjs
+4. Generate the first inventory:  node scripts/anti-slop/generate-component-index.mjs
 
-6. Git gates (recommended):  git init && node scripts/anti-slop/install-hooks.mjs
+5. Git gates (recommended):  git init && node scripts/anti-slop/install-hooks.mjs
    - pre-commit: modularity + docs on staged files (blocking), duplicate/import reports
    - pre-push: full duplicate + import gates + lint/typecheck/test via run-project-checks
    - /audit-ui in OpenCode produces a prioritized refactor plan from the same checks
 
-7. Layer direction (imports.deny): the import gate detects cycles out of the box;
+6. Layer direction (imports.deny): the import gate detects cycles out of the box;
    it enforces layer direction once you declare rules in anti-slop.config.json.
    Starter rules to adapt (paths must match your layout):
 

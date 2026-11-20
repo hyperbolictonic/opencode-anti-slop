@@ -240,15 +240,20 @@ export function isFunctionBody(stripped, openBraceIdx) {
  * than borrowing a neighbouring comment.
  */
 export function jsdocBefore(source, idx) {
-  const slice = source.slice(0, idx);
-  const start = slice.lastIndexOf('/**');
-  if (start === -1) return null;
-  const end = slice.indexOf('*/', start);
-  if (end === -1) return null;
-  if (slice.slice(end + 2).trim() !== '') return null;
+  const slice = source.slice(0, idx).replace(/\s+$/, '');
+  const end = slice.lastIndexOf('*/');
+  if (end === -1 || end !== slice.length - 2) return null; // no block ends here
 
-  const lines = slice
-    .slice(start + 3, end)
+  // Look only at the region after the previous comment close, and take its
+  // FIRST line-start '/**'. A glob inside a doc (`"src/domain/**"`) is mid-line
+  // and is not mistaken for the opening; taking the LAST '/**' would find it.
+  const prevClose = slice.lastIndexOf('*/', end - 1);
+  const region = slice.slice(prevClose === -1 ? 0 : prevClose + 2, end);
+  const open = /(?:^|\n)[ \t]*\/\*\*/.exec(region);
+  if (!open) return null;
+
+  const lines = region
+    .slice(open.index + open[0].length)
     .split('\n')
     .map((l) => l.replace(/^\s*\*+\s?/, '').trim())
     .filter(Boolean);

@@ -82,6 +82,19 @@ test('jsdocBefore: tag-only block is not a usage doc', () => {
   assert.equal(jsdocBefore(src, idx), null);
 });
 
+test('jsdocBefore: a glob inside the doc does not break block detection', () => {
+  // Regression: loadConfig documents `"src/domain/**"`; lastIndexOf('/**')
+  // matched the glob and the index row became `" }] }`.
+  const src = [
+    '/**',
+    ' * Reads the config.',
+    ' * Example: { "from": "src/domain/**" }',
+    ' */',
+    'export const x = 1;',
+  ].join('\n');
+  assert.equal(jsdocBefore(src, src.indexOf('export')), 'Reads the config.');
+});
+
 test('jsdocBefore: no block at all -> null', () => {
   assert.equal(jsdocBefore('export const x = 1', 0), null);
 });

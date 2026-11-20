@@ -9,7 +9,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -58,8 +58,7 @@ test('installer: --help exits 0 (a missing import must not reach users)', () => 
   assert.match(run.stdout, /available: default/);
 });
 
-test('starter config: the file budget matches the schema default and the default preset', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'antislop-starter-'));
+test('starter config: the file budget matches the schema default and the default preset', () => {  const dir = mkdtempSync(path.join(tmpdir(), 'antislop-starter-'));
   try {
     const run = spawnSync(
       process.execPath,
@@ -77,6 +76,59 @@ test('starter config: the file budget matches the schema default and the default
       'starter config disagrees with the schema default');
     assert.equal(budget, manifest.config.modularity.maxFileLines,
       'starter config disagrees with the default preset');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+/** Install into a fresh (or prepared) temp dir; returns the dir. */
+function installInto(prepare = () => {}) {
+  const dir = mkdtempSync(path.join(tmpdir(), 'antislop-install-'));
+  prepare(dir);
+  const run = spawnSync(
+    process.execPath,
+    [path.join(ROOT, 'install.mjs'), '.', '--for', 'default'],
+    { cwd: dir, encoding: 'utf8' },
+  );
+  assert.equal(run.status, 0, run.stderr);
+  return dir;
+}
+
+test('installer: the component index is registered as an always-loaded instruction', () => {
+  const dir = installInto();
+  try {
+    const config = JSON.parse(readFileSync(path.join(dir, 'opencode.json'), 'utf8'));
+    assert.ok(
+      config.instructions.includes('docs/COMPONENT_INDEX.md'),
+      'the inventory must be loaded into every session, not left for the agent to find',
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('installer: an existing opencode.json is merged, not overwritten', () => {
+  const dir = installInto((d) => {
+    writeFileSync(
+      path.join(d, 'opencode.json'),
+      JSON.stringify({ $schema: 'https://opencode.ai/config.json', instructions: ['AGENTS.md'], theme: 'x' }),
+    );
+  });
+  try {
+    const config = JSON.parse(readFileSync(path.join(dir, 'opencode.json'), 'utf8'));
+    assert.deepEqual(config.instructions, ['AGENTS.md', 'docs/COMPONENT_INDEX.md']);
+    assert.equal(config.theme, 'x', 'unrelated keys must survive');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('installer: an unparsable opencode.json is left alone', () => {
+  const dir = installInto((d) => {
+    writeFileSync(path.join(d, 'opencode.json'), '{ not json');
+  });
+  try {
+    assert.equal(readFileSync(path.join(dir, 'opencode.json'), 'utf8'), '{ not json');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

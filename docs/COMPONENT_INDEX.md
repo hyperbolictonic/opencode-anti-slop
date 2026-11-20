@@ -40,7 +40,7 @@ Inventory of shared layouts, components, hooks, services, and utilities under `s
 | `anti-slop/cli.mjs` | `globToRegex` | Convert a glob (`**`, `*`, `?`) into a RegExp tested against '/'-separated rel paths. |
 | `anti-slop/cli.mjs` | `matchesAnyGlob` | True when relPath matches any ignore glob. |
 | `anti-slop/config.mjs` | `scanExtensions` | The scan extension set for a gate run: `config.scan.extensions` (a preset |
-| `anti-slop/config.mjs` | `loadConfig` | " }] } |
+| `anti-slop/config.mjs` | `loadConfig` | Reads `anti-slop.config.json` from process.cwd() (repo root), returning the |
 | `anti-slop/lib.mjs` | `isGenerated` | True when relPath is a generated artifact (see GENERATED_FILE). |
 | `anti-slop/lib.mjs` | `walk` | Recursively list source files under `dir`, as { full, rel } with '/'-separated rel paths. |
 | `anti-slop/lib.mjs` | `stripNoise` | Remove comments and blank string contents so brace/regex analysis is |

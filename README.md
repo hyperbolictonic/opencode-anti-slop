@@ -70,8 +70,10 @@ node scripts/anti-slop/generate-component-index.mjs   # in your project
 ```
 
 Requires Node >= 18 and git. No npm dependencies — the kit installs clean into
-any project. The installer prints the manual steps that cannot be safely
-automated: an `AGENTS.md` snippet, optional `opencode.json` instructions,
+any project. It writes `opencode.json` (creating it, or merging the entry into
+an existing config) so `docs/COMPONENT_INDEX.md` is loaded into every session —
+the inventory is only a reuse mechanism if the agent starts with it. It prints
+the steps that cannot be safely automated: an `AGENTS.md` snippet,
 `package.json` scripts, and the ESLint hooks plugin.
 
 Skills are auto-discovered by OpenCode from `.opencode/skills/` in the target
