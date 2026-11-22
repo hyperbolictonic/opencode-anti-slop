@@ -49,6 +49,12 @@ moved it.
    than just a passing typecheck?
 6. **Surface.** Removed or renamed exports without a deprecation path; entry
    points that consumers must now chase.
+7. **Rewrite check** (only when the diff replaces rather than moves). Is there a
+   behaviour ledger covering every old member — kept, merged, or dropped with a
+   reason? Do the characterization tests (or the documented manual log) pass on
+   both sides? Is the old path deleted in this diff, with no dual
+   implementation? A rewrite missing any of these is a rejection, not a
+   follow-up.
 
 ## Output
 

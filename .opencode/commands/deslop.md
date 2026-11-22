@@ -66,6 +66,11 @@ State first, then components, then consumers. One band per commit. For each
 step: files created/changed, members moved **by name** (never by line range),
 consumers updated, and the gate command that must pass afterwards.
 
+If the unit cannot be split honestly and qualifies for a rewrite (`deslopping`
+§6), say so and plan the rewrite instead: characterization evidence first, then
+the new structure, then deletion of the old path **in the same step**, with the
+behaviour ledger as a required deliverable.
+
 ## Phase 6 — Acceptance table
 
 State the numbers, not adjectives:
@@ -76,6 +81,9 @@ State the numbers, not adjectives:
 | duplicated lines (repo total) | N | ? | must not rise |
 | each new module ≤ budget, 7-point checklist | — | ? | pass |
 | band map written and reviewed | — | ? | yes |
+| behaviour ledger complete *(rewrites only)* | — | ? | every member mapped |
+| old path deleted, no dual implementation *(rewrites only)* | — | ? | yes |
+| behaviour unchanged — tests or log on both sides *(rewrites only)* | — | ? | yes |
 
 **A green metric with the same responsibilities and dependencies is a failure.**
 Say so explicitly if the only thing that changed is where the text lives.

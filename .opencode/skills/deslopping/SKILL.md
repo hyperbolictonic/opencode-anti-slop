@@ -73,7 +73,42 @@ written band map cannot be reviewed, so it cannot be accepted.
 - **Ownerless buckets**: `utils`/`helpers`/`common` — give each member a real
   owner or delete it.
 
-## 6. Is it de-slopping or redistribution?
+## 6. When a rewrite beats a split
+
+Decomposition is the default; a rewrite is an exception. Rewrite when **no
+honest band split exists** — not because moving text is hard.
+
+A rewrite is allowed only when all four hold:
+
+1. **No viable bands** — members cannot be grouped by shared state, change
+   reason or consumers without inventing interfaces that exist only to avoid
+   the rewrite (the 40-method mutable god object).
+2. **Behaviour is pinned** — characterization tests pass before and after. For
+   untested code, a documented, repeatable manual script (draft mode, golden
+   request/response, DOM snapshot) run on both sides. "It typechecks" is not
+   behaviour.
+3. **The concept count falls** — fewer exported names, modules, dependencies or
+   branches. A rewrite that keeps the same concepts under new names is churn.
+4. **One change, old path deleted** — no dual implementation, no permanent flag.
+
+**The contract that must not change:** public exports/signatures, routes,
+persisted data shapes, error codes/messages callers match on, telemetry event
+names, accessibility roles/labels, documented side effects. Behaviour changes
+ship separately, with their own approval.
+
+**Artifacts — a rewrite without these is a rejected rewrite:**
+
+- **Behaviour ledger** — old member → new home → fate (kept / merged / dropped +
+  why). Nothing disappears without a reason.
+- **Characterization evidence** — tests green on old and new, or the manual log.
+- **Band map** for the new structure.
+- **Deletion proof** — the old module is gone in the same diff.
+
+**Red flags (auto-reject):** old and new module both exported; no test diff;
+justified only by line count; a new dependency added to avoid understanding the
+old code; unrelated cleanup bundled in.
+
+## 7. Is it de-slopping or redistribution?
 
 Any "no" means stop; the split is redistribution:
 
@@ -85,7 +120,7 @@ Any "no" means stop; the split is redistribution:
 4. Did the duplicates total fall or stay level (never rise)?
 5. Would a reviewer reading one module understand why its members are together?
 
-## 7. Order of work
+## 8. Order of work
 
 1. Evidence inventory → band map (sections 3–4).
 2. Remove fake seams, dead abstractions, false bands (section 5).
