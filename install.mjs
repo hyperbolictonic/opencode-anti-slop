@@ -351,8 +351,9 @@ Manual setup in ${target} (one-time):
    With no rules the gate prints a cycles-only notice so a green result is never
    mistaken for full architectural enforcement.
 
-Found a rule that misled you, a gate false positive, or a preset that breaks?
-Report it with the exact command and output:
+Found a flaw in the anti-slop system itself - a misleading rule, a gate false
+positive/negative, a broken installer or preset? (Not this project's own code.)
+Ask your human to file it at the kit's queue, with the command and output:
 https://github.com/hyperbolictonic/opencode-anti-slop/issues
 `);
 

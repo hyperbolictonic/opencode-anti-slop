@@ -11,8 +11,18 @@ a refactor is not done because they turned green:
 
 !`node scripts/anti-slop/check-duplicates.mjs --threshold 0 --summary`
 
-Scope: $ARGUMENTS. If no scope was given, ask for a file or directory — do not
-guess, and do not start with the whole tree.
+## Scope and queue
+
+`/deslop` plans **one file** (or one class/function) per run — the band map is
+per unit, and a plan for a whole tree is a plan for nothing.
+
+- `$ARGUMENTS` is a file path → plan that file.
+- `$ARGUMENTS` is a directory or several paths → build a **queue** from the
+  modularity output above, one line per violation as
+  `file · metric size`, largest first. Print the queue, then plan **only** the
+  first entry. Do not start file 2 until file 1 is accepted or skipped.
+- No arguments → ask which file. If the user says "everything", print the queue
+  and ask which one to start.
 
 ## Phase 1 — Inventory (read-only, no edits yet)
 
@@ -77,5 +87,7 @@ acceptance table. No code changes.
 
 If the arguments include `apply` (e.g. `/deslop apply src/session.ts`), carry on
 after presenting the plan: execute one band per commit, re-run the gates after
-each, and update the acceptance table. If a step cannot meet the table, stop and
-report the blocker rather than adjusting the plan to fit the gates.
+each, and update the acceptance table. With a queue, walk it in order — one file
+at a time, stopping at the first rejection and reporting it rather than
+continuing to "make progress". If a step cannot meet the table, stop and report
+the blocker rather than adjusting the plan to fit the gates.
