@@ -143,3 +143,17 @@ test('gate: --help prints usage instead of starting a scan', () => {
   assert.match(run.stdout, /encoding" section/);
   rmSync(dir, { recursive: true, force: true });
 });
+
+test('gate: .opencode skills are scanned (they are products, not tooling)', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'antislop-enc-'));
+  mkdirSync(path.join(dir, '.opencode', 'skills', 'x'), { recursive: true });
+  writeFileSync(path.join(dir, '.opencode', 'skills', 'x', 'SKILL.md'), 'clean text\n');
+  const clean = spawnSync(process.execPath, [GATE], { cwd: dir, encoding: 'utf8' });
+  assert.equal(clean.status, 0, clean.stderr);
+
+  writeFileSync(path.join(dir, '.opencode', 'skills', 'x', 'SKILL.md'), 'rule \uFFFD broken\n');
+  const broken = spawnSync(process.execPath, [GATE], { cwd: dir, encoding: 'utf8' });
+  assert.equal(broken.status, 1);
+  assert.match(broken.stdout, /\.opencode\/skills\/x\/SKILL\.md/);
+  rmSync(dir, { recursive: true, force: true });
+});

@@ -185,6 +185,13 @@ console.log('\nMost duplicated files:');
 for (const w of worst) console.log(`  ${w.rel}: ${w.dup}/${w.total} lines (${((w.dup / w.total) * 100).toFixed(1)}%)`);
 console.log(`\nTotal duplicated lines: ${totalDup}/${totalAll} (${pct.toFixed(1)}%)`);
 
+if (args.threshold > 0 && pct >= args.threshold * 0.9 && pct <= args.threshold) {
+  console.log(
+    `[note] approaching the duplication threshold (${pct.toFixed(1)}% of ${args.threshold}%). ` +
+    'This is a ratio: adding clean lines dilutes it, so watch maxDuplicatedLines too.',
+  );
+}
+
 // --- absolute guards ----------------------------------------------------------
 // The percentage is a ratio: adding a large *clean* file lowers it without
 // removing a clone. An absolute ceiling (config) and the baseline's stored

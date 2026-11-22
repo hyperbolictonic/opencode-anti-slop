@@ -2,11 +2,11 @@
 
 <!-- generated: run `node scripts/anti-slop/generate-component-index.mjs` to regenerate -->
 
-Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 13 files, 48 exports.
+Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 13 files, 50 exports.
 
 > Rule of use: before creating any new component, hook, or utility, check this file first (see the `reuse-before-create` skill). When you add a shared abstraction, rerun the generator and fill in the "When to use" column.
 
-## Modules (48)
+## Modules (50)
 
 | File | Export | When to use |
 |---|---|---|
@@ -47,6 +47,7 @@ Inventory of shared layouts, components, hooks, services, and utilities under `s
 | `anti-slop/lib.mjs` | `stripComments` | Remove comments while KEEPING string contents verbatim — used where the |
 | `anti-slop/lib.mjs` | `tokenize` | Tokenize stripped source into normalized tokens [{ t, line }] (1-based lines): strings -> `<str>`, numbers -> `<num>`, identifiers/symbols stay literal. |
 | `anti-slop/lib.mjs` | `lineOf` | 1-based line number of char index `idx` within comment/string-stripped source. |
+| `anti-slop/lib.mjs` | `parseLimitExceptions` | Parse `// anti-slop: <limit> <value> — <reason>` declarations. |
 | `anti-slop/lib.mjs` | `isControlFlow` | True when the `{` at openBraceIdx opens a control-flow block (if/for/while/ |
 | `anti-slop/lib.mjs` | `isFunctionBody` | True when the `{` at openBraceIdx opens a function/method body rather than a |
 | `anti-slop/lib.mjs` | `jsdocBefore` | Returns the first line of the JSDoc/TSDoc block immediately preceding |
@@ -56,6 +57,7 @@ Inventory of shared layouts, components, hooks, services, and utilities under `s
 | `anti-slop/lib.mjs` | `GENERATED_FILE` | Generated files that must never be gated (sizes/counts are machine-owned). |
 | `anti-slop/lib.mjs` | `SOURCE_EXT` | Source file extensions the gates scan. |
 | `anti-slop/lib.mjs` | `TEST_FILE` | Filenames of test/spec files — excluded from gates by default, included when |
+| `anti-slop/lib.mjs` | `LIMIT_NAMES` | Limits a file may declare an exception for, via |
 | `anti-slop/run-project-checks.mjs` | `detectPackageManager` | Detect the package manager from the lockfile present in `dir`. |
 | `anti-slop/run-project-checks.mjs` | `typecheckCommand` | The local-binary execution for `tsc --noEmit`, per package manager. |
 

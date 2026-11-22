@@ -115,8 +115,9 @@ What meets the bar:
 - ~150 lines, zero filler.
 
 And your preset does not need to rewrite what the kit already covers:
-`reuse-before-create`, `modular-architecture`, `abstraction-review` and
-`verify-clean-code` are framework-agnostic — select them in your manifest's
+`reuse-before-create`, `modular-architecture`, `deslopping`,
+`abstraction-review` and `verify-clean-code` are framework-agnostic — select
+them in your manifest's
 `skills` list and write **only** the framework-specific skills (for JUCE:
 processor/editor separation, no allocations or blocking on the audio thread,
 `juce::ignoreUnused` discipline). The default preset's manifest is a worked

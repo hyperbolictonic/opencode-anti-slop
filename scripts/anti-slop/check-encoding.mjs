@@ -127,12 +127,14 @@ export function hasUtf8Bom(text) {
 
 /** Directories never scanned: shared build-output list + this kit's log noise. */
 const SKIP_DIRS = new Set([...EXCLUDE_DIRS, 'data']);
+/** Dot-directories that ARE products (docs, skills, commands), not tooling. */
+const TRACKED_DOT_DIRS = new Set(['.github', '.opencode']);
 
 function textFiles(root) {
   const files = [];
   (function walk(dir) {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
-      if (e.name.startsWith('.') && e.name !== '.github') continue;
+      if (e.name.startsWith('.') && !TRACKED_DOT_DIRS.has(e.name)) continue;
       if (SKIP_DIRS.has(e.name)) continue;
       const full = path.join(dir, e.name);
       if (statSync(full).isDirectory()) walk(full);

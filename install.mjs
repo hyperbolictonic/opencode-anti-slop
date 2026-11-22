@@ -15,7 +15,7 @@
  *
  * Copies:
  *   .opencode/skills/<selected skills>   -> <target>/.opencode/skills/
- *   .opencode/commands/audit-ui.md       -> <target>/.opencode/commands/
+ *   .opencode/commands/*.md           -> <target>/.opencode/commands/
  *   scripts/anti-slop/*.mjs              -> <target>/scripts/anti-slop/
  *   templates/anti-slop-ci.yml           -> <target>/.github/workflows/
  *

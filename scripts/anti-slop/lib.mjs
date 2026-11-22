@@ -166,6 +166,42 @@ export function lineOf(stripped, idx) {
 const CONTROL_KEYWORDS = new Set(['if', 'for', 'while', 'switch', 'catch']);
 
 /**
+ * Limits a file may declare an exception for, via
+ *   // anti-slop: <limit> <value> — <reason>
+ * File-scoped limits apply anywhere; member-scoped limits must sit directly
+ * above the member they exempt (enforced by the gate).
+ */
+export const LIMIT_NAMES = new Set(['file-lines', 'function-lines', 'class-methods', 'exports']);
+
+/**
+ * Parse `// anti-slop: <limit> <value> — <reason>` declarations.
+ * Returns { exceptions: [{ limit, value, reason, line }], invalid: [{ line, why }] }.
+ * A reason is mandatory: an unexplained exemption is the lazy fix the kit bans,
+ * and a malformed directive fails loudly instead of being silently ignored.
+ */
+export function parseLimitExceptions(source) {
+  const exceptions = [];
+  const invalid = [];
+  source.split(/\r?\n/).forEach((text, i) => {
+    // Only a real line comment counts: prose/JSDoc that documents the syntax
+    // (` * // anti-slop: ...`) must not be mistaken for a malformed directive.
+    if (!/^\s*\/\/\s*anti-slop:/.test(text)) return;
+    const m = /^\/\/\s*anti-slop:\s*(file-lines|function-lines|class-methods|exports)\s+(\d+)\s*(?:[-—]\s*(.*))?$/.exec(text.trim());
+    if (!m) {
+      invalid.push({ line: i + 1, why: 'not `// anti-slop: <limit> <value> — <reason>`' });
+      return;
+    }
+    const reason = (m[3] ?? '').trim();
+    if (reason.length < 8) {
+      invalid.push({ line: i + 1, why: 'a reason (>= 8 chars) is required after the dash' });
+      return;
+    }
+    exceptions.push({ limit: m[1], value: Number(m[2]), reason, line: i + 1 });
+  });
+  return { exceptions, invalid };
+}
+
+/**
  * True when the `{` at openBraceIdx opens a control-flow block (if/for/while/
  * switch/catch): the nearest `)` before the brace belongs to a `(` that follows
  * one of the control keywords. `foo(x) {` is NOT control flow.

@@ -76,3 +76,87 @@ test('modularity: per-file baseline keys match the full run (staged mode)', () =
   assert.equal(perFile.status, 0, perFile.stderr);
   rmSync(dir, { recursive: true, force: true });
 });
+
+// --- soft band, exceptions, exports budget ----------------------------------
+
+/** Temp repo with one file of `lines` simple statements. */
+function fileRepo(lines, content = null) {
+  const dir = mkdtempSync(path.join(tmpdir(), 'antislop-band-'));
+  mkdirSync(path.join(dir, 'src'), { recursive: true });
+  const body = content ?? Array.from({ length: lines }, (_, i) => `const v${i} = ${i};`).join('\n');
+  writeFileSync(path.join(dir, 'src', 'x.ts'), `${body}\n`);
+  return dir;
+}
+
+test('modularity: the soft band prints a note and still passes', () => {
+  const dir = fileRepo(420); // soft 400 / hard 500
+  const r = run(dir);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /soft band/);
+  assert.match(r.stdout, /x\.ts: file 42\d \(soft 400 \/ hard 500\)/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('modularity: a declared exception raises only that limit, and is printed', () => {
+  const dir = fileRepo(0, [
+    '// anti-slop: file-lines 620 — generated parse table, one artifact',
+    ...Array.from({ length: 600 }, (_, i) => `const v${i} = ${i};`),
+  ].join('\n'));
+  const r = run(dir);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /declared file-lines 620/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('modularity: growing beyond a declared exception fails again', () => {
+  const dir = fileRepo(0, [
+    '// anti-slop: file-lines 620 — generated parse table, one artifact',
+    ...Array.from({ length: 660 }, (_, i) => `const v${i} = ${i};`),
+  ].join('\n'));
+  const r = run(dir);
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /\(> 620, declared 620\)/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('modularity: an exception without a reason fails', () => {
+  const dir = fileRepo(0, [
+    '// anti-slop: file-lines 620',
+    ...Array.from({ length: 600 }, (_, i) => `const v${i} = ${i};`),
+  ].join('\n'));
+  const r = run(dir);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /invalid anti-slop directive/);
+  assert.match(r.stderr, /reason.*required/i);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('modularity: more exceptions than the cap is a pattern, not an exception', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'antislop-cap-'));
+  mkdirSync(path.join(dir, 'src'), { recursive: true });
+  const body = Array.from({ length: 600 }, (_, i) => `const v${i} = ${i};`).join('\n');
+  for (let i = 0; i < 4; i++) {
+    writeFileSync(
+      path.join(dir, 'src', `m${i}.ts`),
+      `// anti-slop: file-lines 620 — generated table ${i} for the parser\n${body}\n`,
+    );
+  }
+  const r = run(dir);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /4 anti-slop limit exceptions declared \(max 3 per repo\)/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('modularity: too many declared exports fails, and re-exports do not count', () => {
+  const exports = Array.from({ length: 21 }, (_, i) => `export const v${i} = ${i};`).join('\n');
+  const dir = fileRepo(0, exports);
+  const r = run(dir);
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /\[exports\] line 1: 21 declared exports/);
+  rmSync(dir, { recursive: true, force: true });
+
+  const barrel = fileRepo(0, Array.from({ length: 40 }, (_, i) => `export { v${i} } from './m${i}';`).join('\n'));
+  const ok = run(barrel);
+  assert.equal(ok.status, 0, ok.stderr);
+  rmSync(barrel, { recursive: true, force: true });
+});

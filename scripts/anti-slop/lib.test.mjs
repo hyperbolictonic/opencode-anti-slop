@@ -19,6 +19,7 @@ import {
   isGenerated,
   jsdocBefore,
   lineOf,
+  parseLimitExceptions,
   stripNoise,
   tokenize,
   walk,
@@ -226,8 +227,7 @@ test('isFunctionBody: control flow, classes, literals and calls are not bodies',
   assert.ok(!isFunctionBody('const x = useMemo(() => ({', bodyBrace('const x = useMemo(() => ({')));
 });
 
-test('isFunctionBody: semicolon-free code does not leak a previous line into the head', () => {
-  // Regression from a real Payload collection: no semicolons, and the previous
+test('isFunctionBody: semicolon-free code does not leak a previous line into the head', () => {  // Regression from a real Payload collection: no semicolons, and the previous
   // line ends in `)`; `const X: CollectionConfig = {` was counted as a
   // 119-line function.
   const source = [
@@ -236,4 +236,23 @@ test('isFunctionBody: semicolon-free code does not leak a previous line into the
     'export const CarePlans: CollectionConfig = {',
   ].join('\n');
   assert.ok(!isFunctionBody(source, source.lastIndexOf('{')));
+});
+
+// --- parseLimitExceptions ----------------------------------------------------
+
+test('parseLimitExceptions: values and reasons; malformed directives are reported', () => {
+  const src = [
+    '// anti-slop: file-lines 620 — generated parse table, one artifact',
+    '  // anti-slop: class-methods 12 — Payload adapter, one method per hook',
+    '// anti-slop: exports 30',
+    'const note = "// anti-slop: exports 5 — a string, not a directive";',
+  ].join('\n');
+  const { exceptions, invalid } = parseLimitExceptions(src);
+  assert.deepEqual(
+    exceptions.map((e) => [e.limit, e.value, e.line]),
+    [['file-lines', 620, 1], ['class-methods', 12, 2]],
+  );
+  assert.equal(invalid.length, 1);
+  assert.equal(invalid[0].line, 3);
+  assert.match(invalid[0].why, /reason/);
 });

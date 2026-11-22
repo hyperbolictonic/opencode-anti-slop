@@ -114,6 +114,7 @@ non-zero — so this kit pairs model-level skills with deterministic gates:
 | Duplicated components, hooks, utils, server actions | duplicate gate (token-based clone detection) |
 | Misused `useEffect`, premature `useMemo`/`useCallback`, Context abuse | `react-state-and-effects` skill |
 | Monolithic files, god classes, oversized functions | modularity gate (size budgets) |
+| Splits that redistribute slop under new file names | `deslopping` skill: band map + redistribution test |
 | Undocumented shared exports, stale component inventory | docs gate + index generator |
 | Load-bearing domain rules buried in UI components | `abstraction-review` skill (post-refactor) |
 
@@ -278,8 +279,14 @@ cannot claim.
   modular-architecture/         UI and non-UI: single-responsibility modules,
                                 ports & adapters with injected dependencies, OO
                                 composition, no god files/classes/functions.
-                                Includes the decomposition rule, the 7-point
-                                split checklist and the lazy-fix red flags.
+                                Includes the decomposition rule, the band-by-domain
+                                rule, the 7-point split checklist and the
+                                lazy-fix red flags.
+  deslopping/                   Existing code is untrusted: treat the previous
+                                author's section banners and folder names as
+                                claims, re-derive bands from state/consumers/
+                                co-change, write a band map, remove fake seams,
+                                and apply the redistribution test before any split.
   abstraction-review/           Post-refactor review for duplication that has
                                 not happened yet: load-bearing rules left in UI
                                 components, structural twins, near-clone triage,
@@ -294,6 +301,9 @@ cannot claim.
   audit-ui.md                   /audit-ui — prioritized refactor plan built from
                                 the deterministic checks (duplication, monoliths,
                                 layout reuse, missing docs, misplaced logic).
+  deslop.md                     /deslop — evidence-first de-slopping plan: band
+                                map, false-band audit, removals, ordered split
+                                steps, structural acceptance table. `apply` runs it.
 
 scripts/anti-slop/
   lib.mjs                       Shared scanning helpers (walk, stripNoise,
@@ -409,13 +419,23 @@ your tuning. Editor autocomplete:
   `*.test.*`/`*.spec.*` files — copy-pasted test scaffolding is logic that
   drifts, but intentional fixture/table-test similarity adds noise, so it is
   opt-in. Exclusions are printed on every run.
-- **`modularity`** — size budgets in lines/methods. `ignorePaths`: globs
-  (scan-root- or repo-relative) for files exempt from the budgets; the gate
-  prints a notice naming every glob it exempts, because an exemption is a file
-  the budget can no longer see. There are deliberately **no per-file budget
-  overrides**: a source file over budget needs decomposition, not an exemption
-  (see the `modular-architecture` skill), and a `fileLineOverrides` key is
-  rejected with an explicit warning rather than honoured.
+- **`modularity`** — size budgets in lines, methods and **declared exports**
+  (`maxExportsPerFile`, default 20; re-exports belong to barrels and are not
+  counted). Each limit has a **soft band** at `softFactor` of the hard cap
+  (default 0.8): findings there print one aggregated note and exit 0, so
+  pressure is visible without a cliff. A file may declare a **justified
+  exception** next to the code —
+  `// anti-slop: file-lines 620 — generated parse table` — honoured up to that
+  number, printed on every run, and capped at `maxExceptions` (default 3) per
+  repo; more than that fails as "a pattern, not an exception". Exceptions are
+  per limit, so a `file-lines` exception never excuses a god class's method
+  count. `ignorePaths`: globs (scan-root- or repo-relative) for files exempt
+  from the budgets; the gate prints a notice naming every glob it exempts,
+  because an exemption is a file the budget can no longer see. There are
+  deliberately **no per-file budget overrides**: a source file over budget
+  needs decomposition, not an exemption (see the `modular-architecture` skill),
+  and a `fileLineOverrides` key is rejected with an explicit warning rather
+  than honoured.
 - **`docs`** — `ignorePaths`: files exempt from the docs gate **and excluded
   from the component index**, so the generator and the gate always agree.
   `ignoreExports`: export names that are framework configuration; the Next.js
@@ -513,9 +533,10 @@ npx github:hyperbolictonic/opencode-anti-slop --for <preset>
   separate packages.
 - **You are not starting from zero**: the kit's own skills double as worked
   examples of the format, and framework-agnostic skills
-  (`reuse-before-create`, `modular-architecture`, `abstraction-review`,
-  `verify-clean-code`) can be selected as-is — your preset only adds the
-  framework-specific vocabulary. See [presets/README.md](presets/README.md).
+  (`reuse-before-create`, `modular-architecture`, `deslopping`,
+  `abstraction-review`, `verify-clean-code`) can be selected as-is - your preset
+  only adds the framework-specific vocabulary. See
+  [presets/README.md](presets/README.md).
 
 ### Installing and running a preset
 

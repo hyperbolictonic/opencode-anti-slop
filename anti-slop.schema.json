@@ -26,6 +26,9 @@
         "maxFileLines": { "type": "integer", "default": 500, "description": "files over this many lines are flagged; a file over budget is decomposed by responsibility, never exempted per file" },
         "maxFunctionLines": { "type": "integer", "default": 80, "description": "functions/methods over this many lines are flagged" },
         "maxClassMethods": { "type": "integer", "default": 10, "description": "classes with more public methods are flagged" },
+        "maxExportsPerFile": { "type": "integer", "default": 20, "description": "declared exports per file (re-exports belong to barrels and are not counted); a junk drawer is a junk drawer even under the line budget" },
+        "softFactor": { "type": "number", "minimum": 0.1, "maximum": 1, "default": 0.8, "description": "fraction of the hard cap at which a finding starts printing a soft-band note (exit 0). Pressure without a cliff" },
+        "maxExceptions": { "type": "integer", "minimum": 0, "default": 3, "description": "per-repo cap on `// anti-slop: <limit> <value> — <reason>` declarations; more than this is a pattern, not an exception" },
         "ignorePaths": { "type": "array", "items": { "type": "string" }, "description": "globs (scan-root- or repo-relative) for files exempt from size budgets" }
       }
     },

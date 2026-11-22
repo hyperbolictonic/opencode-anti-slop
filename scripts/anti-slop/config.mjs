@@ -35,7 +35,7 @@ const KNOWN_SECTIONS = new Set(['duplicates', 'modularity', 'docs', 'imports', '
  * the gate away; either way it must not be ignored silently. */
 const KNOWN_SECTION_KEYS = {
   duplicates: new Set(['src', 'minTokens', 'threshold', 'maxDuplicatedLines', 'ignore', 'includeTests']),
-  modularity: new Set(['src', 'maxFileLines', 'maxFunctionLines', 'maxClassMethods', 'ignorePaths']),
+  modularity: new Set(['src', 'maxFileLines', 'maxFunctionLines', 'maxClassMethods', 'maxExportsPerFile', 'softFactor', 'maxExceptions', 'ignorePaths']),
   docs: new Set(['src', 'ignorePaths', 'ignoreExports']),
   imports: new Set(['src', 'deny']),
   encoding: new Set(['ignorePaths']),
@@ -91,6 +91,13 @@ function validateConfig(parsed) {
   num('modularity', 'maxFileLines');
   num('modularity', 'maxFunctionLines');
   num('modularity', 'maxClassMethods');
+  num('modularity', 'maxExportsPerFile');
+  num('modularity', 'maxExceptions');
+  num('modularity', 'softFactor');
+  const soft = parsed.modularity?.softFactor;
+  if (typeof soft === 'number' && (soft <= 0 || soft > 1)) {
+    warns.push('modularity.softFactor must be > 0 and <= 1 (a fraction of the hard cap)');
+  }
   arr('modularity', 'ignorePaths');
   arr('docs', 'ignorePaths');
   arr('docs', 'ignoreExports');

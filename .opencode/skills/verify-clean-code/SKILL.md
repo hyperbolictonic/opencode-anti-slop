@@ -105,6 +105,11 @@ task extracted components, merged duplicated flows, or moved rules between
 files, run the `abstraction-review` skill before reporting, and include its
 "Second-order opportunities" list in the report.
 
+If the task de-slopped **existing** code, also apply the `deslopping`
+redistribution test and include the band map in the report: a split whose
+membership came from the old file's comments or line order is slop
+redistribution, even when every gate is green.
+
 ## 8. Report
 
 End the task with a short summary: checks run, results, files touched, and any
