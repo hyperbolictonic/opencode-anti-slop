@@ -103,6 +103,9 @@ test('installer: the component index is registered as an always-loaded instructi
       config.instructions.includes('docs/COMPONENT_INDEX.digest.md'),
       'the bounded digest must be loaded into every session, not the unbounded index',
     );
+    const createRule = (config.permissions ?? []).find((p) => p.resource === 'gh issue create*');
+    assert.ok(createRule, 'filing an issue must be gated on human approval');
+    assert.equal(createRule.effect, 'ask');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

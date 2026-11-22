@@ -267,9 +267,18 @@ function ensureOpencodeInstructions(target) {
   if (!existsSync(file)) {
     writeFileSync(
       file,
-      `${JSON.stringify({ $schema: 'https://opencode.ai/config.json', instructions: [entry] }, null, 2)}\n`,
+      `${JSON.stringify({
+        $schema: 'https://opencode.ai/config.json',
+        instructions: [entry],
+        // Filing a public issue is a human decision: the harness asks before
+        // any issue is created or commented on, so an agent cannot do it alone.
+        permissions: [
+          { action: 'shell', resource: 'gh issue create*', effect: 'ask' },
+          { action: 'shell', resource: 'gh issue comment*', effect: 'ask' },
+        ],
+      }, null, 2)}\n`,
     );
-    console.log(`[ok] ${file} (registers ${entry} as an always-loaded instruction)`);
+    console.log(`[ok] ${file} (registers ${entry}; gh issue create/comment require approval)`);
     return;
   }
   let config;
@@ -341,6 +350,10 @@ Manual setup in ${target} (one-time):
 
    With no rules the gate prints a cycles-only notice so a green result is never
    mistaken for full architectural enforcement.
+
+Found a rule that misled you, a gate false positive, or a preset that breaks?
+Report it with the exact command and output:
+https://github.com/hyperbolictonic/opencode-anti-slop/issues
 `);
 
 // --- optional hooks ------------------------------------------------------------

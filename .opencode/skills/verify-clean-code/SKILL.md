@@ -114,3 +114,24 @@ redistribution, even when every gate is green.
 
 End the task with a short summary: checks run, results, files touched, and any
 pre-existing issues you noticed but did not fix (report, don't drive-by-fix).
+
+### If the kit itself misled you
+
+These rules are meant to be enforced, not trusted. When a rule is wrong, a gate
+false-positives/negatives, or the installer/preset breaks, the kit wants the
+report — but **filing is a human decision, not an agent action**:
+
+1. **Draft, don't file.** Write the issue (title + body) and show it to the
+   user. Wait for an explicit "file it". A general "sounds good", silence, or
+   your own judgement is not approval.
+2. **Never include** their source, data, file paths, logs, env values or
+   secrets. Reduce it to a minimal generic fixture.
+3. **Search first** for an existing issue with the same symptom; comment on it
+   rather than duplicating.
+4. **Where:** <https://github.com/hyperbolictonic/opencode-anti-slop/issues> for
+   defects in the kit itself. Project-specific debt belongs in the task report
+   or the user's own tracker — not the kit's issues.
+5. **If they decline,** record the finding in the task report and move on.
+
+Never file an issue on the user's behalf, and never use the tracker as a way to
+report their own debt.
