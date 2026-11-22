@@ -39,7 +39,7 @@ mkdirSync(hooksDir, { recursive: true });
 
 const PRE_COMMIT = `#!/bin/sh
 # anti-slop pre-commit gate (installed by scripts/anti-slop/install-hooks.mjs)
-staged=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\\.(ts|tsx|js|jsx|mjs|mts)$')
+staged=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\\.(ts|tsx|js|jsx|mjs|mts)$' | grep -v '^scripts/anti-slop/')
 [ -z "$staged" ] && exit 0
 
 echo "[anti-slop] modularity check on staged files..."
