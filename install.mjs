@@ -41,12 +41,14 @@ function printHelp() {
   const names = ['default', ...availablePresetNames(presetsDir)]
     .filter((v, i, a) => a.indexOf(v) === i);
   console.log([
-    'Usage: npx github:hyperbolictonic/opencode-anti-slop [target-dir] [--for <preset>] [--force] [--hooks]',
+    'Usage: npx github:hyperbolictonic/opencode-anti-slop [target-dir] [--for <preset>] [--force] [--hooks] [--review-model <provider/model>] [--no-reviewer]',
     '',
-    '  target-dir  defaults to the current directory',
-    `  --for       install a framework preset (available: ${names.join(', ')})`,
-    '  --force     overwrite kit files that already exist in the target',
-    '  --hooks     also install the git pre-commit gate (requires .git)',
+    '  target-dir      defaults to the current directory',
+    `  --for           install a framework preset (available: ${names.join(', ')})`,
+    '  --force         overwrite kit files that already exist in the target',
+    '  --hooks         also install the git pre-commit gate (requires .git)',
+    '  --review-model  model for the optional deslop-reviewer subagent (default: inherit the session model)',
+    '  --no-reviewer   skip the reviewer agent entirely',
   ].join('\n'));
 }
 
@@ -62,6 +64,7 @@ const argv = process.argv.slice(2);
 const flags = new Set();
 let forPreset = null;
 let targetArg = null;
+let reviewModel = null;
 
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
@@ -70,7 +73,12 @@ for (let i = 0; i < argv.length; i++) {
     if (!forPreset || forPreset.startsWith('--')) {
       fail('--for requires a preset name.');
     }
-  } else if (a === '--force' || a === '--hooks') {
+  } else if (a === '--review-model') {
+    reviewModel = argv[++i];
+    if (!reviewModel || reviewModel.startsWith('--')) {
+      fail('--review-model requires a provider/model value (e.g. anthropic/claude-sonnet-5-5).');
+    }
+  } else if (a === '--force' || a === '--hooks' || a === '--no-reviewer') {
     flags.add(a);
   } else if (a === '-h' || a === '--help') {
     printHelp();
@@ -182,6 +190,45 @@ mkdirSync(commandsDest, { recursive: true });
 for (const entry of readdirSync(commandsSrc, { withFileTypes: true })) {
   if (entry.isFile() && entry.name.endsWith('.md')) {
     copyOverwrite(path.join(commandsSrc, entry.name), path.join(commandsDest, entry.name));
+  }
+}
+
+// --- reviewer agent (optional; dormant until invoked) --------------------------
+const wantReviewer = !flags.has('--no-reviewer');
+if (wantReviewer) {
+  let chosenModel = reviewModel;
+  // Ask only when a human is at a terminal; CI and piped runs must never block.
+  if (!chosenModel && process.stdin.isTTY && process.stdout.isTTY) {
+    const { createInterface } = await import('node:readline/promises');
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    const answer = (await rl.question(
+      'Reviewer model for the deslop-reviewer subagent (provider/model, Enter = inherit): ',
+    )).trim();
+    rl.close();
+    if (answer) chosenModel = answer;
+  }
+
+  const agentsSrc = path.join(kitRoot, '.opencode', 'agents');
+  const agentsDest = path.join(target, '.opencode', 'agents');
+  if (existsSync(agentsSrc)) {
+    mkdirSync(agentsDest, { recursive: true });
+    for (const entry of readdirSync(agentsSrc, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
+      copyOverwrite(path.join(agentsSrc, entry.name), path.join(agentsDest, entry.name));
+    }
+
+    const reviewerFile = path.join(agentsDest, 'deslop-reviewer.md');
+    if (chosenModel && existsSync(reviewerFile)) {
+      const text = readFileSync(reviewerFile, 'utf8');
+      const withModel = /^model:/m.test(text)
+        ? text.replace(/^model:.*$/m, `model: ${chosenModel}`)
+        : text.replace(/^---\r?\n/, (m) => `${m}model: ${chosenModel}\n`);
+      writeFileSync(reviewerFile, withModel);
+      console.log(`[ok] deslop-reviewer installed (model: ${chosenModel})`);
+    } else {
+      console.log('[ok] deslop-reviewer installed (model: inherited from the session)');
+    }
+    console.log('    Invoke it deliberately with /review-deslop — it costs tokens only when used.');
   }
 }
 

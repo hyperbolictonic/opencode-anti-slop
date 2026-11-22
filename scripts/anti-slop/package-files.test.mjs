@@ -25,6 +25,8 @@ const RUNTIME_FILES = [
   'presets/default/manifest.json',
   'templates/anti-slop-ci.yml',
   '.opencode/skills/modular-architecture/SKILL.md',
+  '.opencode/commands/deslop.md',
+  '.opencode/agents/deslop-reviewer.md',
   'scripts/anti-slop/config.mjs',
 ];
 
@@ -82,14 +84,13 @@ test('starter config: the file budget matches the schema default and the default
 });
 
 /** Install into a fresh (or prepared) temp dir; returns the dir. */
-function installInto(prepare = () => {}) {
+function installInto(prepare = () => {}, args = ['.', '--for', 'default']) {
   const dir = mkdtempSync(path.join(tmpdir(), 'antislop-install-'));
   prepare(dir);
-  const run = spawnSync(
-    process.execPath,
-    [path.join(ROOT, 'install.mjs'), '.', '--for', 'default'],
-    { cwd: dir, encoding: 'utf8' },
-  );
+  const run = spawnSync(process.execPath, [path.join(ROOT, 'install.mjs'), ...args], {
+    cwd: dir,
+    encoding: 'utf8',
+  });
   assert.equal(run.status, 0, run.stderr);
   return dir;
 }
@@ -129,6 +130,35 @@ test('installer: an unparsable opencode.json is left alone', () => {
   });
   try {
     assert.equal(readFileSync(path.join(dir, 'opencode.json'), 'utf8'), '{ not json');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('installer: the reviewer agent is installed by default, dormant, and skippable', () => {
+  const dir = installInto();
+  try {
+    const file = path.join(dir, '.opencode', 'agents', 'deslop-reviewer.md');
+    assert.ok(existsSync(file), 'reviewer agent must be installed');
+    assert.match(readFileSync(file, 'utf8'), /^mode: subagent$/m);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+
+  const skipped = installInto(() => {}, ['.', '--for', 'default', '--no-reviewer']);
+  try {
+    assert.equal(existsSync(path.join(skipped, '.opencode', 'agents', 'deslop-reviewer.md')), false);
+  } finally {
+    rmSync(skipped, { recursive: true, force: true });
+  }
+});
+
+test('installer: --review-model pins the reviewer model in the agent frontmatter', () => {
+  const dir = installInto(() => {}, ['.', '--for', 'default', '--review-model', 'anthropic/claude-sonnet-5-5']);
+  try {
+    const text = readFileSync(path.join(dir, '.opencode', 'agents', 'deslop-reviewer.md'), 'utf8');
+    assert.match(text, /^model: anthropic\/claude-sonnet-5-5$/m);
+    assert.match(text, /^mode: subagent$/m, 'frontmatter must stay valid');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

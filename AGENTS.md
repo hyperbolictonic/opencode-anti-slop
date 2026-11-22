@@ -11,7 +11,10 @@ it is not itself an app. See `README.md` for the full picture and install flow.
   `modular-architecture`, `deslopping`, `abstraction-review`,
   `verify-clean-code`.
 - **Command** (`.opencode/commands/audit-ui.md`): `/audit-ui` refactor-plan
-  generator built on the deterministic checks.
+  generator built on the deterministic checks; `deslop.md` (`/deslop`:
+  band map + acceptance table); `review-deslop.md` (launches the reviewer).
+- **Agent** (`.opencode/agents/deslop-reviewer.md`): optional read-only
+  reviewer subagent. Dormant until invoked, so it costs tokens only on demand.
 - **Scripts** (`scripts/anti-slop/`): `generate-component-index.mjs` (builds
   `docs/COMPONENT_INDEX.md` from JSDoc descriptions), `check-duplicates.mjs`
   (built-in clone detector), `check-modularity.mjs` (size-budget gate),

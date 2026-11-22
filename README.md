@@ -304,6 +304,15 @@ cannot claim.
   deslop.md                     /deslop — evidence-first de-slopping plan: band
                                 map, false-band audit, removals, ordered split
                                 steps, structural acceptance table. `apply` runs it.
+  review-deslop.md              /review-deslop — launches the read-only
+                                deslop-reviewer subagent on the current diff.
+
+.opencode/agents/
+  deslop-reviewer.md            Optional read-only subagent: verdict + ranked
+                                findings on a de-slop diff (banding, fake seams,
+                                moved debt, weakened tests). Dormant — costs
+                                tokens only when invoked. Installer can pin its
+                                model with --review-model, or skip it.
 
 scripts/anti-slop/
   lib.mjs                       Shared scanning helpers (walk, stripNoise,
