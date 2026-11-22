@@ -112,6 +112,7 @@ non-zero — so this kit pairs model-level skills with deterministic gates:
 |---|---|
 | Rewritten layouts instead of reused components | `reuse-before-create` + `layout-composition` skills |
 | Duplicated components, hooks, utils, server actions | duplicate gate (token-based clone detection) |
+| Re-spelled layout skeletons / design-system chrome in `className` | class-literal gate (normalised literal counting) |
 | Misused `useEffect`, premature `useMemo`/`useCallback`, Context abuse | `react-state-and-effects` skill |
 | Monolithic files, god classes, oversized functions | modularity gate (size budgets) |
 | Splits that redistribute slop under new file names | `deslopping` skill: band map + redistribution test |
@@ -328,6 +329,9 @@ scripts/anti-slop/
   check-duplicates.mjs          Copy/paste detector (token-based, zero deps);
                                 exits non-zero when duplication exceeds the
                                 per-repo threshold.
+  check-class-literals.mjs      Design-system drift: normalised className
+                                literals repeated 4+ times (the layout skeleton
+                                the 50-token clone window cannot see).
   check-modularity.mjs          Monolith gate: file >500 / function >80 lines,
                                 class >10 methods. Per-file mode for git hooks.
   check-imports.mjs             Import-boundary gate: circular dependencies
@@ -428,6 +432,13 @@ your tuning. Editor autocomplete:
   `*.test.*`/`*.spec.*` files — copy-pasted test scaffolding is logic that
   drifts, but intentional fixture/table-test similarity adds noise, so it is
   opt-in. Exclusions are printed on every run.
+- **`classLiterals`** — `minOccurrences` (default 4): how often a normalised
+  `className` literal may repeat before the gate flags it; `allow`: globs for
+  design-system modules that legitimately own a literal (printed like every
+  other exemption). Ordering, whitespace and `${...}` interpolations are
+  normalised away, so reordering classes cannot hide a copy. Raising
+  `minOccurrences` or widening `allow` to pass is the lazy fix — extract the
+  component instead.
 - **`modularity`** — size budgets in lines, methods and **declared exports**
   (`maxExportsPerFile`, default 20; re-exports belong to barrels and are not
   counted). Each limit has a **soft band** at `softFactor` of the hard cap

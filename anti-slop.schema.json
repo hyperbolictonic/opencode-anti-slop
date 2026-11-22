@@ -65,6 +65,16 @@
         }
       }
     },
+    "classLiterals": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Design-system drift: counts normalised className literals (whitespace-split, sorted, interpolations stripped) and flags ones repeated across components - the skeleton the 50-token clone window cannot see.",
+      "properties": {
+        "src": { "type": "string", "default": "src" },
+        "minOccurrences": { "type": "integer", "default": 4, "minimum": 2, "description": "repetitions before a literal is flagged; raising it to pass is the lazy fix" },
+        "allow": { "type": "array", "items": { "type": "string" }, "description": "globs for modules that legitimately own a literal (e.g. components/ui/**); printed like every other exemption" }
+      }
+    },
     "imports": {
       "type": "object",
       "additionalProperties": false,

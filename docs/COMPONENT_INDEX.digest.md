@@ -2,11 +2,12 @@
 
 <!-- generated: run `node scripts/anti-slop/generate-component-index.mjs` to regenerate -->
 
-13 modules, 50 exports under `scripts/`. Full "When to use" descriptions live in [docs/COMPONENT_INDEX.md](COMPONENT_INDEX.md) — grep it by concept before creating a component, hook, or utility (see `reuse-before-create`).
+14 modules, 52 exports under `scripts/`. Full "When to use" descriptions live in [docs/COMPONENT_INDEX.md](COMPONENT_INDEX.md) — grep it by concept before creating a component, hook, or utility (see `reuse-before-create`).
 
 | Module | Exports |
 |---|---|
 | `anti-slop/baseline.mjs` | 7: loadBaseline, saveBaseline, compareCounts, compareKindCounts, compareSets, baselineGate, BASELINE_FILE |
+| `anti-slop/check-class-literals.mjs` | 2: normaliseClassList, extractClassLiterals |
 | `anti-slop/check-docs-links.mjs` | 5: repoMarkdownFiles, githubSlug, headingSlugs, extractLinks, checkMarkdown |
 | `anti-slop/check-encoding.mjs` | 5: isSuspectMojibake, hasCorruptionMarkers, utf8ToCp1252String, repairDoubleEncodedUtf8, hasUtf8Bom |
 | `anti-slop/check-imports.mjs` | 3: resolveSpecifier, buildImportGraph, findCycles |

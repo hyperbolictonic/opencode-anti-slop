@@ -73,6 +73,9 @@ node scripts/anti-slop/check-encoding.mjs || exit 1
 echo "[anti-slop] docs link gate (broken links, anchors, local-disk references)..."
 node scripts/anti-slop/check-docs-links.mjs || exit 1
 
+echo "[anti-slop] class-literal drift gate (re-spelled layout skeletons)..."
+node scripts/anti-slop/check-class-literals.mjs || exit 1
+
 echo "[anti-slop] project checks (lint/typecheck/test; skips are printed, not hidden)..."
 node scripts/anti-slop/run-project-checks.mjs || exit 1
 
