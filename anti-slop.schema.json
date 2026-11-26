@@ -53,6 +53,31 @@
         }
       }
     },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Trigger for optional independent review (review-scope.mjs). Advice only - the review itself is the human's decision.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Global switch for the optional reviewer. false = the same as uninstalling it for this repo: review-scope prints [review] disabled and no cadence is offered. Set at install time (or --no-reviewer) for teams with their own review system."
+        },
+        "maxFiles": { "type": "integer", "default": 5, "description": "changed files at or above which review is proposed" },
+        "maxLines": { "type": "integer", "default": 200, "description": "added+deleted lines at or above which review is proposed" },
+        "riskPaths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "globs that warrant review regardless of size, e.g. src/**/access/**, src/**/payments/**, **/migrations/**, .github/workflows/**"
+        },
+        "autonomy": {
+          "type": "string",
+          "enum": ["ask", "auto"],
+          "default": "ask",
+          "description": "ask: propose /review and wait for the human. auto: run it at the cadence agreed for the batch (autopilot) without asking again"
+        }
+      }
+    },
     "scan": {
       "type": "object",
       "additionalProperties": false,

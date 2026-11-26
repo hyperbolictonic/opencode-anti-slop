@@ -29,7 +29,7 @@
  *   node install.mjs [target-repo-dir] [--for <preset>] [--force] [--hooks]
  */
 
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { availablePresetNames, resolvePreset, mergeStarterConfig } from './presets/resolve.mjs';
@@ -194,42 +194,63 @@ for (const entry of readdirSync(commandsSrc, { withFileTypes: true })) {
 }
 
 // --- reviewer agent (optional; dormant until invoked) --------------------------
-const wantReviewer = !flags.has('--no-reviewer');
-if (wantReviewer) {
-  let chosenModel = reviewModel;
-  // Ask only when a human is at a terminal; CI and piped runs must never block.
-  if (!chosenModel && process.stdin.isTTY && process.stdout.isTTY) {
-    const { createInterface } = await import('node:readline/promises');
-    const rl = createInterface({ input: process.stdin, output: process.stdout });
+let wantReviewer = !flags.has('--no-reviewer');
+let chosenModel = reviewModel;
+
+// Ask once at a terminal; CI and piped runs never block. A team that already
+// has its own review system answers n here (or passes --no-reviewer).
+if (!flags.has('--no-reviewer') && process.stdin.isTTY && process.stdout.isTTY) {
+  const { createInterface } = await import('node:readline/promises');
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const enable = (await rl.question(
+    'Install the optional independent code reviewer? Tokens are spent only when it runs. [Y/n] ',
+  )).trim().toLowerCase();
+  if (enable === 'n' || enable === 'no') wantReviewer = false;
+  if (wantReviewer && !chosenModel) {
     const answer = (await rl.question(
-      'Reviewer model for the deslop-reviewer subagent (provider/model, Enter = inherit): ',
+      'Reviewer model (provider/model, Enter = inherit from the session): ',
     )).trim();
-    rl.close();
     if (answer) chosenModel = answer;
   }
+  rl.close();
+}
 
+// Retire kit-owned agent files from earlier versions, even when review is off:
+// two reviewers side by side is confusing either way.
+const agentsDest = path.join(target, '.opencode', 'agents');
+for (const retired of ['deslop-reviewer.md']) {
+  const stale = path.join(agentsDest, retired);
+  if (existsSync(stale)) {
+    rmSync(stale);
+    console.log(`[retire] ${path.join('.opencode', 'agents', retired)} (replaced by code-reviewer.md)`);
+  }
+}
+
+if (wantReviewer) {
   const agentsSrc = path.join(kitRoot, '.opencode', 'agents');
-  const agentsDest = path.join(target, '.opencode', 'agents');
   if (existsSync(agentsSrc)) {
     mkdirSync(agentsDest, { recursive: true });
+
     for (const entry of readdirSync(agentsSrc, { withFileTypes: true })) {
       if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
       copyOverwrite(path.join(agentsSrc, entry.name), path.join(agentsDest, entry.name));
     }
 
-    const reviewerFile = path.join(agentsDest, 'deslop-reviewer.md');
+    const reviewerFile = path.join(agentsDest, 'code-reviewer.md');
     if (chosenModel && existsSync(reviewerFile)) {
       const text = readFileSync(reviewerFile, 'utf8');
       const withModel = /^model:/m.test(text)
         ? text.replace(/^model:.*$/m, `model: ${chosenModel}`)
         : text.replace(/^---\r?\n/, (m) => `${m}model: ${chosenModel}\n`);
       writeFileSync(reviewerFile, withModel);
-      console.log(`[ok] deslop-reviewer installed (model: ${chosenModel})`);
+      console.log(`[ok] code-reviewer installed (model: ${chosenModel})`);
     } else {
-      console.log('[ok] deslop-reviewer installed (model: inherited from the session)');
+      console.log('[ok] code-reviewer installed (model: inherited from the session)');
     }
-    console.log('    Invoke it deliberately with /review-deslop — it costs tokens only when used.');
+    console.log('    Invoke it deliberately with /review — it costs tokens only when used.');
   }
+} else {
+  console.log('[skip] optional code reviewer — review.enabled will be false in the starter config');
 }
 
 // --- starter config -----------------------------------------------------------
@@ -244,6 +265,7 @@ if (!existsSync(configDest)) {
     modularity: { src: 'src', maxFileLines: 500, maxFunctionLines: 80, maxClassMethods: 10 },
     docs: { src: 'src', ignorePaths: [], ignoreExports: [] },
     imports: { deny: [] },
+    review: { enabled: wantReviewer },
   };
   const merged = mergeStarterConfig(base, preset?.config ?? null);
   if (preset?.extensions) {
@@ -251,6 +273,21 @@ if (!existsSync(configDest)) {
   }
   writeFileSync(configDest, `${JSON.stringify(merged, null, 2)}\n`);
   console.log(`[ok] ${configDest} (starter — tune ignore lists to your framework's declarative files)`);
+}
+
+// The agent files are skipped when review was declined, but an existing config
+// is never rewritten. Say where the switch lives rather than leaving a repo
+// that thinks review is off while `review-scope` still proposes it.
+if (!wantReviewer) {
+  let reviewCfg = null;
+  try {
+    reviewCfg = JSON.parse(readFileSync(configDest, 'utf8')).review ?? null;
+  } catch { /* absent or unparsable: the note below still applies */ }
+  if (!reviewCfg || reviewCfg.enabled !== false) {
+    console.log(
+      '[note] existing anti-slop.config.json kept as-is — set "review": { "enabled": false } to switch the optional reviewer off for this repo',
+    );
+  }
 }
 
 // --- manual steps -----------------------------------------------------------

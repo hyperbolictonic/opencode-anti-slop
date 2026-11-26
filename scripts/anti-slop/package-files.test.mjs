@@ -9,7 +9,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -26,7 +26,7 @@ const RUNTIME_FILES = [
   'templates/anti-slop-ci.yml',
   '.opencode/skills/modular-architecture/SKILL.md',
   '.opencode/commands/deslop.md',
-  '.opencode/agents/deslop-reviewer.md',
+  '.opencode/agents/code-reviewer.md',
   'scripts/anti-slop/config.mjs',
 ];
 
@@ -141,25 +141,62 @@ test('installer: an unparsable opencode.json is left alone', () => {
 test('installer: the reviewer agent is installed by default, dormant, and skippable', () => {
   const dir = installInto();
   try {
-    const file = path.join(dir, '.opencode', 'agents', 'deslop-reviewer.md');
+    const file = path.join(dir, '.opencode', 'agents', 'code-reviewer.md');
     assert.ok(existsSync(file), 'reviewer agent must be installed');
     assert.match(readFileSync(file, 'utf8'), /^mode: subagent$/m);
+    const config = JSON.parse(readFileSync(path.join(dir, 'anti-slop.config.json'), 'utf8'));
+    assert.equal(config.review.enabled, true, 'the switch must be visible in the starter config');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 
   const skipped = installInto(() => {}, ['.', '--for', 'default', '--no-reviewer']);
   try {
-    assert.equal(existsSync(path.join(skipped, '.opencode', 'agents', 'deslop-reviewer.md')), false);
+    assert.equal(existsSync(path.join(skipped, '.opencode', 'agents', 'code-reviewer.md')), false);
+    const config = JSON.parse(readFileSync(path.join(skipped, 'anti-slop.config.json'), 'utf8'));
+    assert.equal(config.review.enabled, false, '--no-reviewer must disable review-scope, not just the files');
   } finally {
     rmSync(skipped, { recursive: true, force: true });
+  }
+});
+
+test('installer: an existing config is never rewritten, but the switch is named', () => {
+  const dir = installInto((d) => {
+    writeFileSync(
+      path.join(d, 'anti-slop.config.json'),
+      JSON.stringify({ modularity: { maxFileLines: 300 } }),
+    );
+  }, ['.', '--for', 'default', '--no-reviewer']);
+  try {
+    const config = JSON.parse(readFileSync(path.join(dir, 'anti-slop.config.json'), 'utf8'));
+    assert.deepEqual(config, { modularity: { maxFileLines: 300 } }, 'tuned config must survive');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('installer: the retired deslop-reviewer agent is removed on upgrade', () => {
+  const dir = installInto((d) => {
+    const agents = path.join(d, '.opencode', 'agents');
+    mkdirSync(agents, { recursive: true });
+    writeFileSync(path.join(agents, 'deslop-reviewer.md'), '---\nmode: subagent\n---\nold\n');
+  });
+  try {
+    assert.equal(
+      existsSync(path.join(dir, '.opencode', 'agents', 'deslop-reviewer.md')),
+      false,
+      'two reviewers side by side is the failure mode the retirement exists to prevent',
+    );
+    assert.ok(existsSync(path.join(dir, '.opencode', 'agents', 'code-reviewer.md')));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });
 
 test('installer: --review-model pins the reviewer model in the agent frontmatter', () => {
   const dir = installInto(() => {}, ['.', '--for', 'default', '--review-model', 'anthropic/claude-sonnet-5-5']);
   try {
-    const text = readFileSync(path.join(dir, '.opencode', 'agents', 'deslop-reviewer.md'), 'utf8');
+    const text = readFileSync(path.join(dir, '.opencode', 'agents', 'code-reviewer.md'), 'utf8');
     assert.match(text, /^model: anthropic\/claude-sonnet-5-5$/m);
     assert.match(text, /^mode: subagent$/m, 'frontmatter must stay valid');
   } finally {

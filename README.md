@@ -305,15 +305,19 @@ cannot claim.
   deslop.md                     /deslop — evidence-first de-slopping plan: band
                                 map, false-band audit, removals, ordered split
                                 steps, structural acceptance table. `apply` runs it.
-  review-deslop.md              /review-deslop — launches the read-only
-                                deslop-reviewer subagent on the current diff.
+  review.md                     /review — launches the read-only code-reviewer
+                                subagent on the current diff (correctness,
+                                security, performance, tests, API surface).
+  review-deslop.md              /review-deslop — the same reviewer with a
+                                refactor focus: banding, ledger, moved debt.
 
 .opencode/agents/
-  deslop-reviewer.md            Optional read-only subagent: verdict + ranked
-                                findings on a de-slop diff (banding, fake seams,
-                                moved debt, weakened tests). Dormant — costs
-                                tokens only when invoked. Installer can pin its
-                                model with --review-model, or skip it.
+  code-reviewer.md              Optional read-only subagent: verdict + ranked
+                                findings on any diff, plus de-slop checks when
+                                the change is a refactor. Dormant — costs tokens
+                                only when invoked. The installer asks whether to
+                                install it, pins its model with --review-model,
+                                or skips it with --no-reviewer.
 
 scripts/anti-slop/
   lib.mjs                       Shared scanning helpers (walk, stripNoise,
@@ -346,6 +350,10 @@ scripts/anti-slop/
   run-project-checks.mjs        Pre-push project checks: lockfile-based
                                 package-manager detection, tsc --noEmit
                                 fallback, skips printed not hidden.
+  review-scope.mjs              Deterministic review trigger: size, renames and
+                                risk paths. Prints `[review] needed` with
+                                reasons, or `disabled` when the switch is off.
+                                Advice only — never a gate.
   install-hooks.mjs             Installs pre-commit (staged files: modularity +
                                 docs, blocking) and pre-push (duplicate, import,
                                 encoding + docs-link gates, project checks)
@@ -469,6 +477,16 @@ your tuning. Editor autocomplete:
   importing a file matching `forbid` is a violation. With no rules, the import
   gate still detects circular dependencies and says so. Deny violations are
   never baselined.
+- **`review`** — the optional independent reviewer, not a gate:
+  `enabled` (default true) is the global switch — `false` means "this repo
+  already has a review system", and `review-scope.mjs` then prints
+  `[review] disabled` and proposes nothing. The installer sets it from the
+  answer to its prompt (or `--no-reviewer`). `maxFiles` (5) and `maxLines`
+  (200) are the size thresholds, `riskPaths` are globs that warrant review at
+  any size (access, payments, migrations, CI), and `autonomy` is `ask` (default:
+  propose once, then wait) or `auto` (follow the cadence agreed for the batch —
+  see `/deslop` autopilot). Review never blocks; the gates are the only things
+  that fail a build.
 - CLI flags override the config; the config overrides defaults. Hooks call the
   scripts bare, so the config governs them automatically.
 

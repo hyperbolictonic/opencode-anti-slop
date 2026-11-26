@@ -2,7 +2,7 @@
 
 <!-- generated: run `node scripts/anti-slop/generate-component-index.mjs` to regenerate -->
 
-14 modules, 52 exports under `scripts/`. Full "When to use" descriptions live in [docs/COMPONENT_INDEX.md](COMPONENT_INDEX.md) — grep it by concept before creating a component, hook, or utility (see `reuse-before-create`).
+15 modules, 55 exports under `scripts/`. Full "When to use" descriptions live in [docs/COMPONENT_INDEX.md](COMPONENT_INDEX.md) — grep it by concept before creating a component, hook, or utility (see `reuse-before-create`).
 
 | Module | Exports |
 |---|---|
@@ -14,6 +14,7 @@
 | `anti-slop/cli.mjs` | 9: parseFlags, bootstrapGate, collectPathFiles, toScanRelative, resolveScanTarget, gateArgs, applyIgnorePaths, globToRegex, … (9) |
 | `anti-slop/config.mjs` | 2: scanExtensions, loadConfig |
 | `anti-slop/lib.mjs` | 17: isGenerated, walk, stripNoise, stripComments, tokenize, lineOf, parseLimitExceptions, isControlFlow, … (17) |
+| `anti-slop/review-scope.mjs` | 3: resolveBase, changedFiles, reviewDecision |
 | `anti-slop/run-project-checks.mjs` | 2: detectPackageManager, typecheckCommand |
 
 > Capped at 120 modules so it can be loaded into every session; the full index is the source of truth.

@@ -2,11 +2,11 @@
 
 <!-- generated: run `node scripts/anti-slop/generate-component-index.mjs` to regenerate -->
 
-Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 14 files, 52 exports.
+Inventory of shared layouts, components, hooks, services, and utilities under `scripts/`. 15 files, 55 exports.
 
 > Rule of use: before creating any new component, hook, or utility, check this file first (see the `reuse-before-create` skill). When you add a shared abstraction, rerun the generator and fill in the "When to use" column.
 
-## Modules (52)
+## Modules (55)
 
 | File | Export | When to use |
 |---|---|---|
@@ -39,7 +39,7 @@ Inventory of shared layouts, components, hooks, services, and utilities under `s
 | `anti-slop/cli.mjs` | `resolveScanTarget` | Resolve the scan root given to a gate (--src): accepts a directory (walked) |
 | `anti-slop/cli.mjs` | `gateArgs` | bootstrapGate plus the standard positional validation most gates share. |
 | `anti-slop/cli.mjs` | `applyIgnorePaths` | Filter resolved files by a docs/duplicates-style ignore-path config: |
-| `anti-slop/cli.mjs` | `globToRegex` | Convert a glob (`**`, `*`, `?`) into a RegExp tested against '/'-separated rel paths. |
+| `anti-slop/cli.mjs` | `globToRegex` | Convert a glob (`**`, `*`, `?`) into a RegExp tested against '/'-separated |
 | `anti-slop/cli.mjs` | `matchesAnyGlob` | True when relPath matches any ignore glob. |
 | `anti-slop/config.mjs` | `scanExtensions` | The scan extension set for a gate run: `config.scan.extensions` (a preset |
 | `anti-slop/config.mjs` | `loadConfig` | Reads `anti-slop.config.json` from process.cwd() (repo root), returning the |
@@ -60,6 +60,9 @@ Inventory of shared layouts, components, hooks, services, and utilities under `s
 | `anti-slop/lib.mjs` | `SOURCE_EXT` | Source file extensions the gates scan. |
 | `anti-slop/lib.mjs` | `TEST_FILE` | Filenames of test/spec files — excluded from gates by default, included when |
 | `anti-slop/lib.mjs` | `LIMIT_NAMES` | Limits a file may declare an exception for, via |
+| `anti-slop/review-scope.mjs` | `resolveBase` | The merge-base with the mainline, falling back to the parent commit. |
+| `anti-slop/review-scope.mjs` | `changedFiles` | Changed files and line counts between base and the working tree (so |
+| `anti-slop/review-scope.mjs` | `reviewDecision` | Decide whether a review is warranted. Pure: no printing, no exit. |
 | `anti-slop/run-project-checks.mjs` | `detectPackageManager` | Detect the package manager from the lockfile present in `dir`. |
 | `anti-slop/run-project-checks.mjs` | `typecheckCommand` | The local-binary execution for `tsc --noEmit`, per package manager. |
 

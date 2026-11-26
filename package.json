@@ -38,7 +38,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test scripts/anti-slop/test-manifest.test.mjs scripts/anti-slop/package-files.test.mjs scripts/anti-slop/lib.test.mjs scripts/anti-slop/cli.test.mjs scripts/anti-slop/check-imports.test.mjs scripts/anti-slop/run-project-checks.test.mjs scripts/anti-slop/check-docs-links.test.mjs scripts/anti-slop/check-encoding.test.mjs scripts/anti-slop/check-modularity.test.mjs scripts/anti-slop/check-duplicates.test.mjs scripts/anti-slop/check-class-literals.test.mjs scripts/anti-slop/check-docs.test.mjs scripts/anti-slop/generate-component-index.test.mjs presets/presets.test.mjs",
+    "test": "node --test scripts/anti-slop/test-manifest.test.mjs scripts/anti-slop/package-files.test.mjs scripts/anti-slop/lib.test.mjs scripts/anti-slop/cli.test.mjs scripts/anti-slop/check-imports.test.mjs scripts/anti-slop/run-project-checks.test.mjs scripts/anti-slop/check-docs-links.test.mjs scripts/anti-slop/check-encoding.test.mjs scripts/anti-slop/check-modularity.test.mjs scripts/anti-slop/check-duplicates.test.mjs scripts/anti-slop/check-class-literals.test.mjs scripts/anti-slop/review-scope.test.mjs scripts/anti-slop/check-docs.test.mjs scripts/anti-slop/generate-component-index.test.mjs presets/presets.test.mjs",
     "gates": "node scripts/anti-slop/check-modularity.mjs --src scripts/anti-slop && node scripts/anti-slop/check-imports.mjs --src scripts && node scripts/anti-slop/check-docs.mjs --src scripts/anti-slop && node scripts/anti-slop/check-duplicates.mjs --src scripts && node scripts/anti-slop/check-encoding.mjs && node scripts/anti-slop/check-docs-links.mjs && node scripts/anti-slop/check-class-literals.mjs",
     "index": "node scripts/anti-slop/generate-component-index.mjs --src scripts"
   }
