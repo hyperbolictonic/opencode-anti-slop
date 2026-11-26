@@ -1,0 +1,11 @@
+---
+import SiteLayout from './SiteLayout.astro';
+const { frontmatter } = Astro.props;
+---
+<SiteLayout title={frontmatter.title} active="manual/">
+  <p class="eyebrow">Operator’s manual / Field notes</p>
+  <article class="max-w-[70ch] [&_h1]:text-5xl [&_h2]:text-3xl [&_ul]:list-disc [&_ul]:pl-6 [&_pre]:bg-neutral [&_pre]:text-neutral-content">
+    <h1>{frontmatter.title}</h1>
+    <slot />
+  </article>
+</SiteLayout>

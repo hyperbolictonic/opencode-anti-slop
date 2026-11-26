@@ -1,0 +1,44 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import GateExample from '../components/GateExample.astro';
+---
+<SiteLayout title="The gates" active="gates/">
+<p class="eyebrow">Quality control / Inspection station</p>
+<h1>Fix the code.<br>
+<span class="red">Not the threshold.</span>
+</h1>
+<p>Independent checks catch violations that model-level instructions may miss. This page illustrates output; it does not run a gate.</p>
+<GateExample />
+<section>
+<h2>What gets caught.</h2>
+<div class="two">
+<article class="rule">
+<h3>Duplicates</h3>
+<p>Token-based clone detection for logic that can drift.</p>
+</article>
+<article class="rule">
+<h3>Modularity</h3>
+<p>File, function, class and export budgets.</p>
+</article>
+<article class="rule">
+<h3>Class literals</h3>
+<p>Repeated layout skeletons and design-system drift.</p>
+</article>
+<article class="rule">
+<h3>Imports</h3>
+<p>Circular dependencies and configured layer boundaries.</p>
+</article>
+<article class="rule">
+<h3>Docs</h3>
+<p>Undocumented shared exports and stale inventory.</p>
+</article>
+<article class="rule">
+<h3>Encoding</h3>
+<p>Mojibake and other encoding corruption.</p>
+</article>
+</div>
+<p>
+<a href="https://github.com/hyperbolictonic/opencode-anti-slop#how-enforcement-works">Full enforcement details ↗</a>
+</p>
+</section>
+</SiteLayout>

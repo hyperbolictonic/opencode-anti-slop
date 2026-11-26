@@ -1,0 +1,19 @@
+{
+  "name": "anti-slop-pages",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^5.0.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "daisyui": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

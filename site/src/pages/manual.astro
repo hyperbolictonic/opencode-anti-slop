@@ -1,0 +1,46 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { sitePath } from '../lib/paths';
+import InstallCommand from '../components/InstallCommand.astro';
+---
+<SiteLayout title="Operator manual" active="manual/">
+<p class="eyebrow">Operator’s manual / Vol. 01</p>
+<h1>The manual.</h1>
+<div class="manual">
+<aside>
+<p class="tag">Contents</p>
+<a href="#start">01 Quick start</a>
+<a href="#inventory">02 Inventory</a>
+<a href="#baseline">03 Legacy debt</a>
+<a href="#scope">04 Scope</a>
+</aside>
+<article>
+<section id="start">
+<h2>01 / Quick start</h2>
+<p>Run in your target project. Requires Node ≥18 and git.</p>
+<InstallCommand />
+<p>Review the installer’s printed manual steps before proceeding.</p>
+</section>
+<section id="inventory">
+<h2>02 / Inventory</h2>
+<p>Generate the shared-export index and use it before creating components.</p>
+<div class="terminal">
+<pre>
+<code>node scripts/anti-slop/generate-component-index.mjs</code>
+</pre>
+</div>
+</section>
+<section id="baseline">
+<h2>03 / Legacy debt</h2>
+<p>Snapshot accepted existing debt with baseline mode, then prevent new violations. Shrink the baseline as debt is removed; do not use it to absorb new debt.</p>
+<a href="https://github.com/hyperbolictonic/opencode-anti-slop#adopting-a-repo-with-legacy-debt-baseline-mode">Full baseline instructions ↗</a>
+</section>
+<section id="scope">
+<h2>04 / Scope</h2>
+<p>Skills are prompt-level guidance; gates are heuristic checks, not compilers. Read the upstream documentation for configuration and limitations.</p>
+<a href="https://github.com/hyperbolictonic/opencode-anti-slop#readme">Complete README ↗</a>
+</section>
+<p><a href={sitePath("field-notes/")}>Field notes / Markdown example →</a></p>
+</article>
+</div>
+</SiteLayout>

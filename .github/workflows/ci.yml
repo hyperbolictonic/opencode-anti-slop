@@ -21,3 +21,19 @@ jobs:
       # never silently absent from CI (encoding and docs-links were, once).
       - run: npm run gates
       - run: node scripts/anti-slop/generate-component-index.mjs --src scripts --check
+
+  site:
+    # The Pages site is built from source on every push, so a broken page is a
+    # red CI run rather than a broken deploy discovered after merge.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+        working-directory: site
+      - run: npm run build
+        working-directory: site

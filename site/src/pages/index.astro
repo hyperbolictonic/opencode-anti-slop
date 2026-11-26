@@ -1,0 +1,67 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import InstallCommand from '../components/InstallCommand.astro';
+import GateExample from '../components/GateExample.astro';
+import { sitePath } from '../lib/paths';
+---
+<SiteLayout title="Good code. No slop." active="">
+<section>
+<div class="eyebrow">Independent software tools / Analogue Rebellion ’83</div>
+<div class="hero">
+<h1>Good code.<br>
+<span class="red">No slop.</span>
+</h1>
+<img class="stamp" src={sitePath("art/stamp.svg")} alt="Zero npm dependencies">
+</div>
+<img class="stripe" src={sitePath("art/stripes.svg")} alt="">
+<p>
+<strong>Your AI coding agent needs standards. Not another strongly worded prompt.</strong>
+</p>
+<p>Agent skills and deterministic checks for reuse, composition and modular code. Built for React and Node projects.</p>
+<InstallCommand />
+<p class="tag">Node ≥18 / Git / Zero npm dependencies</p>
+<div class="actions">
+<a class="btn btn-outline" href={sitePath("manual/")} >Read the manual →</a>
+<a href={sitePath("kits/")} >Browse the kits →</a>
+</div>
+<GateExample />
+</section>
+<section>
+<div class="eyebrow">FIG. 01 / How it works</div>
+<h2>Three lines of defence.</h2>
+<div class="three">
+<article class="rule">
+<p class="tag">01 / WRITE</p>
+<h3>Reuse first.</h3>
+<p>Skills and a generated component index guide agents before they create files.</p>
+</article>
+<article class="rule">
+<p class="tag">02 / COMMIT</p>
+<h3>Catch it early.</h3>
+<p>Staged modularity and documentation checks fail on violations.</p>
+</article>
+<article class="rule">
+<p class="tag">03 / PUSH</p>
+<h3>Hold the line.</h3>
+<p>Full-tree gates and project checks. CI provides another independent layer.</p>
+</article>
+</div>
+<a href={sitePath("gates/")} >Explore the gates →</a>
+</section>
+<section>
+<div class="evidence">
+<p class="tag">Field test 001 / README-reported results</p>
+<h2>Less slop. Measurably.</h2>
+<div class="three">
+<div>Logic duplication <span class="number">17.4 → 0%</span>
+</div>
+<div>Undocumented exports <span class="number">89 → 0</span>
+</div>
+<div>Oversized pages <span class="number">4 → 0</span>
+</div>
+</div>
+<p>Next.js 16 / Payload 3 care-records system; 78 integration tests. One project, not a universal benchmark.</p>
+<a href="https://github.com/hyperbolictonic/opencode-anti-slop#proven-on-a-real-codebase">Read the evidence ↗</a>
+</div>
+</section>
+</SiteLayout>

@@ -1,0 +1,22 @@
+<div class="command">
+  <code id="install">npx opencode-anti-slop --hooks</code>
+  <button type="button" class="btn btn-primary" data-copy="install" hidden>Copy command</button>
+  <span class="status" id="install-status" role="status"></span>
+</div>
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach(button => {
+    button.hidden = false;
+    button.addEventListener('click', async () => {
+      const id = button.dataset.copy;
+      const code = document.getElementById(id ?? '');
+      const status = document.getElementById(`${id}-status`);
+      if (!code || !status) return;
+      try {
+        await navigator.clipboard.writeText(code.textContent ?? '');
+        status.textContent = 'Copied.';
+      } catch {
+        status.textContent = 'Clipboard unavailable. Select and copy the command manually.';
+      }
+    });
+  });
+</script>

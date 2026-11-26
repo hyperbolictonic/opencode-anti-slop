@@ -1,0 +1,32 @@
+---
+import '../styles/global.css';
+import { sitePath } from '../lib/paths';
+interface Props { title: string; active?: string; description?: string }
+const { title, active = '', description = 'Agent skills and deterministic checks that stop AI coding agents producing duplicate components, rewritten layouts and monolithic files.' } = Astro.props;
+const links = [['Home',''], ['The kits','kits/'], ['Manual','manual/'], ['Gates','gates/']];
+const repo = 'https://github.com/hyperbolictonic/opencode-anti-slop';
+---
+<!doctype html>
+<html lang="en" data-theme="analogue-rebellion">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title} | Anti-Slop</title>
+  <meta name="description" content={description} />
+  <link rel="icon" href={sitePath('art/favicon.svg')} type="image/svg+xml" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="border-b-2">
+    <div class="wrap flex flex-wrap items-center justify-between gap-6 py-5">
+      <a href={sitePath()}><img class="w-[170px]" src={sitePath('art/wordmark.svg')} alt="Anti-Slop home" /></a>
+      <nav class="flex flex-wrap gap-4 font-mono text-sm font-bold uppercase" aria-label="Main navigation">
+        {links.map(([label, path]) => <a href={sitePath(path)} aria-current={active === path ? 'page' : undefined} class:list={[active === path && 'bg-neutral text-neutral-content px-2 [text-decoration:none]']}>{label}</a>)}
+        <a href={repo}>GitHub ↗</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main" class="wrap py-8 md:py-12"><slot /></main>
+  <footer class="border-t-2"><div class="wrap flex flex-wrap justify-between gap-4 py-5 text-sm"><span>ANTI-SLOP / INDEPENDENT SOFTWARE TOOLS</span><a href={repo}>Open source / MIT ↗</a></div></footer>
+</body>
+</html>

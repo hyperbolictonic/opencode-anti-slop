@@ -1,0 +1,29 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { sitePath } from '../lib/paths';
+---
+<SiteLayout title="The kits" active="kits/">
+<p class="eyebrow">Catalogue / 001</p>
+<h1>The kits.</h1>
+<p>One system. Framework-specific rules where they matter.</p>
+<div class="two">
+<article class="kit">
+<img src={sitePath("art/kit-react.svg")} alt="React / Node software cover">
+<div>
+<p class="tag">01 / Stable default</p>
+<h2>React / Node</h2>
+<p>Agent skills and JS/TS gates, component inventory, hooks and CI template.</p>
+<a href={sitePath("manual/")} >Install the default →</a>
+</div>
+</article>
+<article class="kit">
+<img src={sitePath("art/kit-author.svg")} alt="Author guide software cover">
+<div>
+<p class="tag">02 / Author guide</p>
+<h2>Build a kit</h2>
+<p>Extend the shared system using preset manifests. Experimental presets require real-world validation.</p>
+<a href="https://github.com/hyperbolictonic/opencode-anti-slop/tree/master/presets">Read preset documentation ↗</a>
+</div>
+</article>
+</div>
+</SiteLayout>

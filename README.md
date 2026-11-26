@@ -364,6 +364,10 @@ presets/                        Framework presets: <name>/manifest.json +
                                 presets/README.md for the author guide.
 templates/anti-slop-ci.yml      GitHub Actions workflow the installer drops
                                 into target repos (.github/workflows/).
+site/                           Astro 5 + Tailwind 4 + daisyUI 5 source for
+                                https://hyperbolictonic.github.io/opencode-anti-slop/
+                                (Analogue Rebellion ’83 theme). Built by
+                                .github/workflows/pages.yml; CI builds it too.
 anti-slop.schema.json           JSON schema for anti-slop.config.json.
 install.mjs                     Installs skills + commands + scripts + CI
                                 template into a target repo.

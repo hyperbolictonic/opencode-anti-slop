@@ -69,6 +69,12 @@ it is not itself an app. See `README.md` for the full picture and install flow.
   number marks what users get.
 - **`data/logs/`** contains Hypagon MCP server runtime logs — noise, not
   project artifacts. Never treat as requirements or code.
+- **`site/`** is the GitHub Pages site (Astro + Tailwind + daisyUI), built by
+  `.github/workflows/pages.yml` and deployed to
+  <https://hyperbolictonic.github.io/opencode-anti-slop/>. It has its own
+  `site/README.md` and no nested `AGENTS.md` — this file governs, one source of
+  truth. Content claims must trace to the README or a release; the kit's gates
+  do not parse `.astro`, so a green gate run is not template validation.
 - Rules stated in skills/scripts must be **concrete and enforceable** — prefer
   a checkable rule ("2+ uses or >150 lines") over prose advice ("keep it DRY").
 

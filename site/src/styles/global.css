@@ -1,0 +1,89 @@
+@import "tailwindcss";
+@plugin "daisyui" { themes: false; }
+@plugin "daisyui/theme" {
+  name: "analogue-rebellion";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: #F2E8D5;
+  --color-base-200: #E5D9C2;
+  --color-base-300: #D5C8AF;
+  --color-base-content: #22211E;
+  --color-primary: #C93632;
+  --color-primary-content: #FFFFFF;
+  --color-secondary: #285B68;
+  --color-secondary-content: #FFFFFF;
+  --color-accent: #E8B544;
+  --color-accent-content: #22211E;
+  --color-neutral: #22211E;
+  --color-neutral-content: #F2E8D5;
+  --color-info: #285B68;
+  --color-info-content: #FFFFFF;
+  --color-success: #365D42;
+  --color-success-content: #FFFFFF;
+  --color-warning: #E8B544;
+  --color-warning-content: #22211E;
+  --color-error: #C93632;
+  --color-error-content: #FFFFFF;
+  --radius-selector: 0rem;
+  --radius-field: 0rem;
+  --radius-box: 0rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 2px;
+  --depth: 0;
+  --noise: 0;
+}
+@theme {
+  --color-burnt-orange: #D56B35;
+  --font-display: "Barlow Condensed", "Arial Narrow", Impact, "Arial Black", sans-serif;
+  --font-sans: "IBM Plex Sans", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+@layer base {
+  body { @apply bg-base-100 text-base-content font-sans text-[17px] leading-relaxed; }
+  /* break-word is a guard, not the layout: it only fires when one display word
+     is wider than the line (fallback fonts are wider than Barlow Condensed). */
+  h1,h2,h3 { @apply font-display uppercase font-black leading-none tracking-tight mb-5 [overflow-wrap:break-word]; }
+  /* 2.25rem, not 3rem: at 320px with fallback fonts "THRESHOLD." measured 346px
+     against a 288px content width, which is page-level horizontal overflow. */
+  h1 { font-size: clamp(2.25rem,8vw,7rem); }
+  h2 { font-size: clamp(2rem,4vw,3.5rem); }
+  h3 { @apply text-2xl; }
+  p { @apply mb-4 max-w-[70ch]; }
+  a:not(.btn) { @apply underline underline-offset-4; }
+  :focus-visible { outline: 3px solid var(--color-secondary); outline-offset: 4px; }
+  pre { @apply overflow-x-auto p-5 text-sm leading-relaxed; }
+  section + section { @apply mt-12 pt-9 border-t-2 border-base-content; }
+}
+@layer components {
+  .wrap { @apply mx-auto max-w-[1120px] px-4 md:px-6; }
+  .eyebrow, .tag { @apply font-mono text-xs font-bold uppercase tracking-widest; }
+  .eyebrow { @apply mb-5; }
+  .red { @apply text-primary; }
+  .hero { @apply grid gap-6 items-center md:grid-cols-[minmax(0,1fr)_150px]; }
+  .stamp { @apply w-24 md:w-full; }
+  .stripe { @apply block w-full h-[15px] my-6; }
+  .actions, .command { @apply flex flex-wrap items-center gap-3 my-5; }
+  .command code { @apply bg-neutral text-neutral-content p-3 [overflow-wrap:anywhere]; }
+  .terminal { @apply bg-neutral text-neutral-content border-2 border-neutral min-w-0; }
+  .terminal .tag { @apply bg-secondary text-secondary-content px-4 py-2; }
+  .fail { color: #ff9b83; }
+  .ok { @apply text-accent; }
+  .three { @apply grid gap-6 md:grid-cols-3; }
+  .two { @apply grid gap-6 md:grid-cols-2; }
+  .rule { @apply border-t-[7px] border-primary pt-4; }
+  .rule:nth-child(3n+2) { @apply border-secondary; }
+  .rule:nth-child(3n+3) { @apply border-burnt-orange; }
+  .evidence { @apply bg-neutral text-neutral-content p-5 md:p-8; }
+  .number { @apply block font-mono text-3xl lg:text-4xl font-bold text-accent my-3; }
+  .kit { @apply grid grid-cols-[100px_minmax(0,1fr)] md:grid-cols-[120px_minmax(0,1fr)] gap-4 border-t-2 pt-5; }
+  .manual { @apply grid gap-10 md:grid-cols-[220px_minmax(0,1fr)]; }
+  .manual aside { @apply border-b-2 pb-4 md:border-b-0 md:border-r-2 md:pr-5; }
+  .manual aside a { @apply block my-2; }
+  .manual article { @apply min-w-0 max-w-[70ch]; }
+  .manual h2 { @apply text-3xl; }
+  .btn-primary { box-shadow: 4px 4px var(--color-base-content); }
+  .skip { @apply absolute -top-32 left-2 bg-base-100 p-3 z-50 focus:top-2; }
+  .status { @apply text-sm; }
+}
