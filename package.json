@@ -1,6 +1,6 @@
 {
   "name": "opencode-anti-slop",
-  "version": "0.4.3",
+  "version": "0.4.5",
   "description": "OpenCode enforcement kit: agent skills plus deterministic gates that keep AI-generated React and Node code modular, DRY, and documented",
   "license": "MIT",
   "type": "module",
