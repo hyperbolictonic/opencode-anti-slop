@@ -61,7 +61,7 @@
   .eyebrow, .tag { @apply font-mono text-xs font-bold uppercase tracking-widest; }
   .eyebrow { @apply mb-5; }
   .red { @apply text-primary; }
-  .hero { @apply grid gap-6 items-center md:grid-cols-[minmax(0,1fr)_150px]; }
+  .masthead { @apply grid gap-6 items-center md:grid-cols-[minmax(0,1fr)_150px]; }
   .stamp { @apply w-24 md:w-full; }
   .stripe { @apply block w-full h-[15px] my-6; }
   .actions, .command { @apply flex flex-wrap items-center gap-3 my-5; }
@@ -85,5 +85,5 @@
   .manual h2 { @apply text-3xl; }
   .btn-primary { box-shadow: 4px 4px var(--color-base-content); }
   .skip { @apply absolute -top-32 left-2 bg-base-100 p-3 z-50 focus:top-2; }
-  .status { @apply text-sm; }
+  .copy-status { @apply text-sm; }
 }
