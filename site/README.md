@@ -47,5 +47,12 @@ in this repository; `src/styles/global.css` holds the theme tokens, and
 - Check 320 / 768 / 1440 px, keyboard tab order, visible focus, 200% zoom,
   reduced motion, the copy-button fallback, and no page-level horizontal
   overflow.
+- **Never reuse a daisyUI class name for a custom component class.** daisyUI 5
+  emits its components in the utilities layer, so `.hero`, `.status` and
+  `.label` beat anything of ours in `@layer components` regardless of
+  specificity. `.hero` stacked the headline and stamp in one cell and `.status`
+  collapsed the copy feedback into a dot; neither broke a JS/TS gate or
+  Lighthouse. Use a distinct name (`.masthead`, `.copy-status`, `.tag`) and
+  check the rendered page.
 - The kit's gates scan `scripts/` only. Astro templates are not parsed by the
   JS/TS gates — do not read a green gate run as template validation.
