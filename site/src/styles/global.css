@@ -54,7 +54,9 @@
   a:not(.btn) { @apply underline underline-offset-4; }
   :focus-visible { outline: 3px solid var(--color-secondary); outline-offset: 4px; }
   pre { @apply overflow-x-auto p-5 text-sm leading-relaxed; }
-  section + section { @apply mt-12 pt-9 border-t-2 border-base-content; }
+  /* A section that starts a new block gets the same separator whether it
+     follows another section or the terminal/hero above it (gates page). */
+  section + section, main > * + section { @apply mt-12 pt-9 border-t-2 border-base-content; }
 }
 @layer components {
   .wrap { @apply mx-auto max-w-[1120px] px-4 md:px-6; }
