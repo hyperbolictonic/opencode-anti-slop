@@ -10,7 +10,8 @@
     "modular-architecture",
     "deslopping",
     "abstraction-review",
-    "verify-clean-code"
+    "verify-clean-code",
+    "verify-claims"
   ],
   "extensions": [".ts", ".tsx", ".js", ".jsx", ".mjs", ".mts"],
   "config": {

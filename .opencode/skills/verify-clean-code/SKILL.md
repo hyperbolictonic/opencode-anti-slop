@@ -134,7 +134,15 @@ The reviewer looks for genuine flaws, not for something to say: a clean
 `accept` with no findings is a valid result. Report it as-is — do not re-run the
 review hoping for a different verdict, and do not ask it to "look harder".
 
-## 9. Report
+## 9. Verify a claim before acting on it
+
+A cited blocker — a kit bug, a failing hook, a reviewer's "major" — is a claim,
+not a constraint. Reproduce it first: `gh issue view` for an issue number, run
+the hook/test for a failure, `file:line` plus a reproduction for a code finding.
+If it cannot be reproduced, mark it **suspected** and do not bypass a hook,
+weaken a threshold or fix a defect nobody has shown exists. See `verify-claims`.
+
+## 10. Report
 
 End the task with a short summary: checks run, results, files touched, and any
 pre-existing issues you noticed but did not fix (report, don't drive-by-fix).

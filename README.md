@@ -297,6 +297,10 @@ cannot claim.
   verify-clean-code/            End-of-task gate: typecheck -> lint -> tests ->
                                 duplicate + modularity + docs checks -> index
                                 freshness -> abstraction review for refactors.
+  verify-claims/                Reproduce a named blocker, failing hook, issue
+                                number or review finding before acting on it;
+                                unverified claims are labelled suspected, never
+                                used to bypass a gate or weaken a threshold.
 
 .opencode/commands/
   audit-ui.md                   /audit-ui — prioritized refactor plan built from

@@ -19,6 +19,10 @@ Collect what the reviewer needs and pass it in the prompt:
 4. For refactors: the band map and behaviour ledger verbatim. If there is none
    and the change claims a split, say so — the reviewer treats that as a finding.
 5. Whether the baseline or any `// anti-slop:` exception changed in this diff.
+6. Any named blocker or issue the change claims to be fixing. Verify it before
+   passing it on: `gh issue view <n>` for an issue number, the failing command
+   for a hook/test claim. If it does not reproduce, say so and treat the finding
+   as suspected — never relay it as the reason to bypass a gate.
 
 Report the reviewer's verdict and findings to the user unchanged. Do not act on
 them without approval, and do not start a second attempt on a "Reject" verdict

@@ -94,6 +94,13 @@ CONSIDER as `suspected — would be confirmed by …`; never dress a hunch as
 MUST FIX. The same applies in reverse: do not soften a traced defect to CONSIDER
 to avoid a low verdict.
 
+**Claims in the prompt are claims too.** An issue number, a "known bug", or a
+gate failure you were told about is not evidence. If the inputs include gate
+output, cite it; if they do not, say the output is missing instead of asserting
+which gate failed. A blocker report that cannot point at a resolving issue, a
+failing command or a diff line is reported as suspected, never as a reason to
+reject.
+
 ## Output
 
 ```

@@ -351,6 +351,8 @@ Manual setup in ${target} (one-time):
    - When building/refactoring React UI: load \`react-composition-patterns\`.
    - When touching state/effects/memo/context: load \`react-state-and-effects\`.
    - Before marking any coding task complete: run the \`verify-clean-code\` checklist.
+   - A cited blocker is a claim: reproduce it before acting (\`verify-claims\`) — no
+     \`--no-verify\`, no weakened gate, no fix for an unverified "bug".
    ${'```'}
 
 2. package.json scripts:
